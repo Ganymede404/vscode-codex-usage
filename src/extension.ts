@@ -72,8 +72,8 @@ function renderDetailsHtml(snapshot: Snapshot | null): string {
       <tr>
         <th>${label}</th>
         <td style="width:60%">
-          <div style="background: var(--vscode-editorWidget-background); border-radius: 4px; height: 14px; overflow: hidden;">
-            <div style="background: ${barColor}; width: ${Math.min(100, pct)}%; height: 100%;"></div>
+          <div class="usage-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.min(100, Math.max(0, pct))}">
+            <div class="usage-bar__fill" style="background: ${barColor}; width: ${Math.min(100, Math.max(0, pct))}%;"></div>
           </div>
         </td>
         <td>${formatPercent(pct)}</td>
@@ -81,9 +81,45 @@ function renderDetailsHtml(snapshot: Snapshot | null): string {
       </tr>`;
   };
 
-  return `<!doctype html><html><body style="font-family: var(--vscode-font-family); padding: 1rem;">
+  return `<!doctype html><html><head>
+<style>
+  body {
+    font-family: var(--vscode-font-family);
+    padding: 1rem;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    text-align: left;
+  }
+
+  td,
+  th {
+    padding: 0.35rem 0.5rem 0.35rem 0;
+    vertical-align: middle;
+  }
+
+  .usage-bar {
+    background: var(--vscode-editorWidget-background);
+    border: 1px solid var(--vscode-input-border, var(--vscode-contrastBorder, var(--vscode-descriptionForeground)));
+    border-radius: 4px;
+    box-sizing: border-box;
+    height: 16px;
+    overflow: hidden;
+  }
+
+  .usage-bar__fill {
+    height: 100%;
+    min-width: 1px;
+  }
+</style>
+</head><body>
 <h2>Codex Usage</h2>
-<table style="width: 100%; border-collapse: collapse;">
+<table>
   <tbody>
     ${row("Current session (5h)", snapshot.rateLimits.primary)}
     ${row("Weekly", snapshot.rateLimits.secondary)}
