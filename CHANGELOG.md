@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0
+
+- Prepare the first public release version.
+- Add GitHub Actions release workflow that packages the extension, creates a version tag, and publishes a GitHub Release with the VSIX artifact.
+- Keep release notes sourced from the matching changelog section.
+- Change usage bar colors to warning yellow at 75% and error red at 90%.
+
 ## 0.0.2
 
 - Add Marketplace icon metadata and optimized PNG icon.
