@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { Snapshot, RateLimitWindow } from "./types";
-import { formatPercent, formatDuration, formatResetTime } from "./format";
+import { formatPercent, formatDuration, getResetDisplay } from "./format";
 
 export class StatusBar {
   private session: vscode.StatusBarItem;
@@ -50,13 +50,16 @@ export class StatusBar {
       return;
     }
     const pct = window.used_percent;
-    item.text = `${label} ${formatPercent(pct)} · ${formatDuration(window.resets_in_seconds)}`;
+    const reset = getResetDisplay(window, snapshot.capturedAt);
+    const resetDuration = reset ? formatDuration(reset.secondsRemaining) : "unknown";
+    const resetAt = reset ? reset.resetAt.toLocaleString() : "unknown";
+    item.text = `${label} ${formatPercent(pct)} · ${resetDuration}`;
 
     const md = new vscode.MarkdownString();
     md.appendMarkdown(`**${label.replace(/\$\([^)]+\)\s*/, "")}** usage\n\n`);
     md.appendMarkdown(`- Used: **${formatPercent(pct)}**\n`);
     md.appendMarkdown(`- Window: ${window.window_minutes} min\n`);
-    md.appendMarkdown(`- Resets in: ${formatDuration(window.resets_in_seconds)} (at ${formatResetTime(window.resets_in_seconds, snapshot.capturedAt)})\n`);
+    md.appendMarkdown(`- Resets in: ${resetDuration} (at ${resetAt})\n`);
     md.appendMarkdown(`- Captured: ${snapshot.capturedAt.toLocaleString()}\n`);
     md.appendMarkdown(`- Source: \`${snapshot.sourceFile}\`\n`);
     item.tooltip = md;

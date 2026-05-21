@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 import { readLatestSnapshot } from "./codexReader";
 import { StatusBar } from "./statusBar";
-import { Snapshot } from "./types";
-import { formatDuration, formatPercent, formatResetTime } from "./format";
+import { RateLimitWindow, Snapshot } from "./types";
+import { formatDuration, formatPercent, getResetDisplay } from "./format";
 
 let timer: NodeJS.Timeout | undefined;
 let statusBar: StatusBar | undefined;
@@ -59,11 +59,14 @@ function renderDetailsHtml(snapshot: Snapshot | null): string {
 </body></html>`;
   }
 
-  const row = (label: string, w: { used_percent: number; window_minutes: number; resets_in_seconds: number } | null | undefined) => {
+  const row = (label: string, w: RateLimitWindow | null | undefined) => {
     if (!w) {
       return `<tr><th>${label}</th><td colspan="3"><em>no data (rate_limits was null)</em></td></tr>`;
     }
     const pct = w.used_percent;
+    const reset = getResetDisplay(w, snapshot.capturedAt);
+    const resetDuration = reset ? formatDuration(reset.secondsRemaining) : "unknown";
+    const resetAt = reset ? reset.resetAt.toLocaleString() : "unknown";
     const barColor = pct >= 90 ? "var(--vscode-errorForeground)" : pct >= 75 ? "var(--vscode-editorWarning-foreground)" : "var(--vscode-progressBar-background)";
     return `
       <tr>
@@ -74,7 +77,7 @@ function renderDetailsHtml(snapshot: Snapshot | null): string {
           </div>
         </td>
         <td>${formatPercent(pct)}</td>
-        <td>resets in ${formatDuration(w.resets_in_seconds)}<br/><small>at ${formatResetTime(w.resets_in_seconds, snapshot.capturedAt)}</small></td>
+        <td>resets in ${resetDuration}<br/><small>at ${resetAt}</small></td>
       </tr>`;
   };
 
