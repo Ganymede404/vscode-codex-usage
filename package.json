@@ -2,7 +2,7 @@
   "name": "vscode-codex-usage",
   "displayName": "Codex Usage",
   "description": "Show current-session (5h) and weekly Codex CLI usage in the VS Code status bar.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "ganymede404",
   "icon": "images/icon.png",
   "galleryBanner": {

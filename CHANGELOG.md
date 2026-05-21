@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.2
+
+- Add Marketplace icon metadata and optimized PNG icon.
+- Add MIT license text.
+
 ## 0.0.1
 
 - Initial Codex usage status bar extension.
