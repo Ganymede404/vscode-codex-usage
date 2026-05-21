@@ -1,0 +1,80 @@
+---
+name: vscode-codex-usage
+description: Maintain the vscode-codex-usage VS Code extension. Use when changing the Codex usage status bar, rollout JSONL parsing, extension manifest, Marketplace packaging, README, or development workflow in this repository.
+---
+
+# vscode-codex-usage
+
+## Purpose
+
+This repo is a TypeScript VS Code extension that reads local Codex CLI rollout
+JSONL files from `~/.codex/sessions/` and shows primary/session and
+secondary/weekly usage in one VS Code status bar item.
+
+## Current Shape
+
+- `src/extension.ts`: activation, polling, command registration, quick-pick UI.
+- `src/statusBar.ts`: single `StatusBarItem`, tooltip rendering, native usage and
+  metadata item builders.
+- `src/codexReader.ts`: resolves Codex home, finds recent rollout files, parses
+  the latest usable `token_count.rate_limits`.
+- `src/format.ts`: percent, duration, and reset-time helpers.
+- `src/types.ts`: `RateLimitWindow`, `RateLimits`, and `Snapshot` contracts.
+- `package.json`: VS Code extension manifest and npm scripts.
+
+## UI Constraints
+
+- Keep one status bar item. Do not split session and weekly usage back into two
+  items unless explicitly requested.
+- Keep the idle status text compact:
+  `$(pulse) Codex <session percent> · <session reset> | Week <weekly percent> · <weekly reset>`.
+- Hover should stay lightweight and native: show only session and weekly usage
+  bars plus reset dates, then a `More information` command link.
+- Click should use native VS Code UI such as `showQuickPick`, not a webview,
+  unless the user explicitly asks for custom HTML.
+- Extra metadata belongs behind `More information`: captured time, source file,
+  and rate-limit window lengths.
+- Status bar icons use Codicons in `$(name)` syntax. There is no built-in Codex
+  icon, so keep `$(pulse)` unless the user chooses another Codicon or adds a
+  contributed product icon.
+
+## Build And Test
+
+Use the repo scripts:
+
+```sh
+npm install
+npm run compile
+```
+
+For manual extension testing, open the repo in VS Code and press F5. The
+`.vscode/launch.json` config starts an Extension Development Host and runs
+`npm: compile` first.
+
+Package locally with:
+
+```sh
+npx @vscode/vsce package
+code --install-extension vscode-codex-usage-<version>.vsix
+```
+
+## Marketplace Notes
+
+- Publish with `vsce`; `package.json` must have a unique lowercase `name`, a
+  SemVer `version`, a `publisher`, `engines.vscode`, `main`, `categories`, and
+  useful Marketplace metadata.
+- Do not use SVG for the Marketplace icon. README/CHANGELOG images should be
+  HTTPS and should avoid untrusted SVGs.
+- A GitHub pipeline is optional. Local publishing with `vsce publish` is normal
+  for small extensions. CI is useful once releases should be repeatable.
+- If adding CI publishing, store the Marketplace/Azure DevOps token as
+  `VSCE_PAT` in repository secrets and run `vsce publish` only from an explicit
+  release/tag workflow.
+
+## Change Guidance
+
+- Prefer small, focused changes and run `npm run compile` before finishing.
+- Keep `README.md` and `PLAN.md` aligned when user-facing behavior changes.
+- Avoid adding runtime network calls; the extension should remain local,
+  read-only, and telemetry-free.
+- Treat `out/`, `node_modules/`, `.vscode-test/`, and `*.vsix` as generated.

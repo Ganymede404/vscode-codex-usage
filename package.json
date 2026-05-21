@@ -1,0 +1,79 @@
+{
+  "name": "vscode-codex-usage",
+  "displayName": "Codex Usage",
+  "description": "Show current-session (5h) and weekly Codex CLI usage in the VS Code status bar.",
+  "version": "0.0.2",
+  "publisher": "ganymede404",
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#0E1117",
+    "theme": "dark"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ganymede404/vscode-codex-usage.git"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "codexUsage.refresh",
+        "title": "Codex Usage: Refresh"
+      },
+      {
+        "command": "codexUsage.showUsage",
+        "title": "Codex Usage: Show Usage"
+      },
+      {
+        "command": "codexUsage.showMoreInformation",
+        "title": "Codex Usage: Show More Information"
+      },
+      {
+        "command": "codexUsage.openSessionsFolder",
+        "title": "Codex Usage: Open Sessions Folder"
+      }
+    ],
+    "configuration": {
+      "title": "Codex Usage",
+      "properties": {
+        "codexUsage.codexHome": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the Codex home directory. Empty means use ~/.codex."
+        },
+        "codexUsage.refreshIntervalSeconds": {
+          "type": "number",
+          "default": 60,
+          "minimum": 5,
+          "description": "How often to re-read the latest rollout file, in seconds."
+        },
+        "codexUsage.lookbackDays": {
+          "type": "number",
+          "default": 7,
+          "minimum": 1,
+          "description": "How many days back to search for rollout files."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "vscode:prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.0"
+  }
+}
