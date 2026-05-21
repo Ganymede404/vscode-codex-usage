@@ -4,6 +4,11 @@
   "description": "Show current-session (5h) and weekly Codex CLI usage in the VS Code status bar.",
   "version": "0.0.1",
   "publisher": "ganymede404",
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#0E1117",
+    "theme": "dark"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
