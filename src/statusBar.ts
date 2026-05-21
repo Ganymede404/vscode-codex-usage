@@ -6,6 +6,9 @@ const TEXT_BAR_WIDTH = 16;
 const SVG_BAR_WIDTH = 180;
 const SVG_BAR_HEIGHT = 10;
 const SVG_BAR_RADIUS = 5;
+const USAGE_COLOR_DEFAULT = "#0078d4";
+const USAGE_COLOR_WARNING = "#cca700";
+const USAGE_COLOR_ERROR = "#f14c4c";
 
 export class StatusBar {
   private item: vscode.StatusBarItem;
@@ -153,16 +156,17 @@ function formatResetDate(window: RateLimitWindow, snapshot: Snapshot): string {
 function formatTextBar(percent: number): string {
   const pct = clampPercent(percent);
   const filled = pct > 0 ? Math.max(1, Math.round((pct / 100) * TEXT_BAR_WIDTH)) : 0;
-  return `${"█".repeat(filled)}${"░".repeat(TEXT_BAR_WIDTH - filled)}`;
+  return `${getUsageIcon(pct)} ${"█".repeat(filled)}${"░".repeat(TEXT_BAR_WIDTH - filled)}`;
 }
 
 function formatSvgBar(percent: number, altText: string): string {
   const pct = clampPercent(percent);
   const fillWidth = Math.round((pct / 100) * SVG_BAR_WIDTH);
+  const fillColor = getUsageColor(pct);
   const svg = [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${SVG_BAR_WIDTH}" height="${SVG_BAR_HEIGHT}" viewBox="0 0 ${SVG_BAR_WIDTH} ${SVG_BAR_HEIGHT}">`,
     `<rect width="${SVG_BAR_WIDTH}" height="${SVG_BAR_HEIGHT}" rx="${SVG_BAR_RADIUS}" fill="#2d2d30"/>`,
-    `<rect width="${fillWidth}" height="${SVG_BAR_HEIGHT}" rx="${SVG_BAR_RADIUS}" fill="#0078d4"/>`,
+    `<rect width="${fillWidth}" height="${SVG_BAR_HEIGHT}" rx="${SVG_BAR_RADIUS}" fill="${fillColor}"/>`,
     `<rect x="0.5" y="0.5" width="${SVG_BAR_WIDTH - 1}" height="${SVG_BAR_HEIGHT - 1}" rx="${SVG_BAR_RADIUS - 0.5}" fill="none" stroke="#6e7681" stroke-opacity="0.8"/>`,
     "</svg>",
   ].join("");
@@ -172,6 +176,18 @@ function formatSvgBar(percent: number, altText: string): string {
 
 function escapeMarkdownAltText(text: string): string {
   return text.replace(/[[\]\\]/g, "\\$&");
+}
+
+function getUsageColor(percent: number): string {
+  if (percent >= 90) return USAGE_COLOR_ERROR;
+  if (percent >= 75) return USAGE_COLOR_WARNING;
+  return USAGE_COLOR_DEFAULT;
+}
+
+function getUsageIcon(percent: number): string {
+  if (percent >= 90) return "$(error)";
+  if (percent >= 75) return "$(warning)";
+  return "$(circle-filled)";
 }
 
 function clampPercent(percent: number): number {
