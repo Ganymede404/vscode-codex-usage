@@ -2,74 +2,158 @@ import * as vscode from "vscode";
 import { Snapshot, RateLimitWindow } from "./types";
 import { formatPercent, formatDuration, getResetDisplay } from "./format";
 
+const BAR_WIDTH = 20;
+
 export class StatusBar {
-  private session: vscode.StatusBarItem;
-  private weekly: vscode.StatusBarItem;
+  private item: vscode.StatusBarItem;
 
   constructor() {
-    this.session = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-    this.session.command = "codexUsage.showDetails";
-    this.weekly = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 99);
-    this.weekly.command = "codexUsage.showDetails";
+    this.item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    this.item.command = "codexUsage.showUsage";
   }
 
   dispose() {
-    this.session.dispose();
-    this.weekly.dispose();
+    this.item.dispose();
   }
 
-  update(snapshot: Snapshot | null, opts: { showSession: boolean; showWeekly: boolean }) {
+  update(snapshot: Snapshot | null) {
     if (!snapshot) {
-      this.session.text = "$(pulse) Codex —";
-      this.session.tooltip = "No Codex rollout files found. Start a Codex session to populate usage.";
-      this.weekly.text = "$(calendar) Week —";
-      this.weekly.tooltip = this.session.tooltip;
-      if (opts.showSession) this.session.show(); else this.session.hide();
-      if (opts.showWeekly) this.weekly.show(); else this.weekly.hide();
+      this.item.text = "$(pulse) Codex —";
+      this.item.tooltip = "No Codex rollout files found. Start a Codex session to populate usage.";
+      this.item.backgroundColor = undefined;
+      this.item.show();
       return;
     }
 
     const { primary, secondary } = snapshot.rateLimits;
-    this.renderItem(this.session, "$(pulse) Codex", primary ?? null, snapshot);
-    this.renderItem(this.weekly, "$(calendar) Week", secondary ?? null, snapshot);
+    this.item.text = `$(pulse) ${formatStatusSegment("Codex", primary ?? null, snapshot)} | ${formatStatusSegment("Week", secondary ?? null, snapshot)}`;
+    this.item.tooltip = renderUsageTooltip(snapshot);
 
-    if (opts.showSession) this.session.show(); else this.session.hide();
-    if (opts.showWeekly) this.weekly.show(); else this.weekly.hide();
-  }
-
-  private renderItem(
-    item: vscode.StatusBarItem,
-    label: string,
-    window: RateLimitWindow | null,
-    snapshot: Snapshot,
-  ) {
-    if (!window) {
-      item.text = `${label} —`;
-      item.tooltip = `No data yet (rate_limits was null in the latest event).\nSource: ${snapshot.sourceFile}`;
-      item.backgroundColor = undefined;
-      return;
-    }
-    const pct = window.used_percent;
-    const reset = getResetDisplay(window, snapshot.capturedAt);
-    const resetDuration = reset ? formatDuration(reset.secondsRemaining) : "unknown";
-    const resetAt = reset ? reset.resetAt.toLocaleString() : "unknown";
-    item.text = `${label} ${formatPercent(pct)} · ${resetDuration}`;
-
-    const md = new vscode.MarkdownString();
-    md.appendMarkdown(`**${label.replace(/\$\([^)]+\)\s*/, "")}** usage\n\n`);
-    md.appendMarkdown(`- Used: **${formatPercent(pct)}**\n`);
-    md.appendMarkdown(`- Window: ${window.window_minutes} min\n`);
-    md.appendMarkdown(`- Resets in: ${resetDuration} (at ${resetAt})\n`);
-    md.appendMarkdown(`- Captured: ${snapshot.capturedAt.toLocaleString()}\n`);
-    md.appendMarkdown(`- Source: \`${snapshot.sourceFile}\`\n`);
-    item.tooltip = md;
-
-    if (pct >= 90) {
-      item.backgroundColor = new vscode.ThemeColor("statusBarItem.errorBackground");
-    } else if (pct >= 75) {
-      item.backgroundColor = new vscode.ThemeColor("statusBarItem.warningBackground");
+    const highestPercent = Math.max(primary?.used_percent ?? 0, secondary?.used_percent ?? 0);
+    if (highestPercent >= 90) {
+      this.item.backgroundColor = new vscode.ThemeColor("statusBarItem.errorBackground");
+    } else if (highestPercent >= 75) {
+      this.item.backgroundColor = new vscode.ThemeColor("statusBarItem.warningBackground");
     } else {
-      item.backgroundColor = undefined;
+      this.item.backgroundColor = undefined;
     }
+
+    this.item.show();
   }
+}
+
+export function createUsageSummaryItems(snapshot: Snapshot): vscode.QuickPickItem[] {
+  return [
+    createUsageQuickPickItem("$(pulse) Current session", snapshot.rateLimits.primary ?? null, snapshot),
+    createUsageQuickPickItem("$(calendar) Weekly", snapshot.rateLimits.secondary ?? null, snapshot),
+    {
+      label: "$(info) More information",
+      detail: "Captured time, source file, and rate-limit window lengths.",
+    },
+  ];
+}
+
+export function createMoreInformationItems(snapshot: Snapshot): vscode.QuickPickItem[] {
+  return [
+    {
+      label: "$(clock) Captured",
+      detail: snapshot.capturedAt.toLocaleString(),
+    },
+    {
+      label: "$(file) Source",
+      detail: snapshot.sourceFile,
+    },
+    {
+      label: "$(pulse) Current session window",
+      detail: formatWindowLength(snapshot.rateLimits.primary ?? null),
+    },
+    {
+      label: "$(calendar) Weekly window",
+      detail: formatWindowLength(snapshot.rateLimits.secondary ?? null),
+    },
+  ];
+}
+
+export function isMoreInformationItem(item: vscode.QuickPickItem | undefined): boolean {
+  return item?.label === "$(info) More information";
+}
+
+function renderUsageTooltip(snapshot: Snapshot): vscode.MarkdownString {
+  const md = new vscode.MarkdownString(undefined, true);
+  md.isTrusted = { enabledCommands: ["codexUsage.showMoreInformation"] };
+
+  md.appendMarkdown("**Codex usage**\n\n");
+  appendUsageWindow(md, "Current session", snapshot.rateLimits.primary ?? null, snapshot);
+  md.appendMarkdown("\n\n");
+  appendUsageWindow(md, "Weekly", snapshot.rateLimits.secondary ?? null, snapshot);
+  md.appendMarkdown("\n\n[More information](command:codexUsage.showMoreInformation)");
+
+  return md;
+}
+
+function appendUsageWindow(
+  md: vscode.MarkdownString,
+  label: string,
+  window: RateLimitWindow | null,
+  snapshot: Snapshot,
+) {
+  md.appendMarkdown(`**${label}**\n\n`);
+  if (!window) {
+    md.appendMarkdown("No data\n");
+    return;
+  }
+
+  const pct = clampPercent(window.used_percent);
+  md.appendMarkdown(`\`${formatBar(pct)}\` ${formatPercent(pct)}\n\n`);
+  md.appendMarkdown(`Resets ${formatResetDate(window, snapshot)}`);
+}
+
+function createUsageQuickPickItem(
+  label: string,
+  window: RateLimitWindow | null,
+  snapshot: Snapshot,
+): vscode.QuickPickItem {
+  if (!window) {
+    return {
+      label,
+      description: formatBar(0),
+      detail: "No data",
+    };
+  }
+
+  const pct = clampPercent(window.used_percent);
+  return {
+    label: `${label} ${formatPercent(pct)}`,
+    description: formatBar(pct),
+    detail: `Resets ${formatResetDate(window, snapshot)}`,
+  };
+}
+
+function formatStatusSegment(label: string, window: RateLimitWindow | null, snapshot: Snapshot): string {
+  if (!window) return `${label} —`;
+
+  const reset = getResetDisplay(window, snapshot.capturedAt);
+  const resetDuration = reset ? formatDuration(reset.secondsRemaining) : "unknown";
+  return `${label} ${formatPercent(window.used_percent)} · ${resetDuration}`;
+}
+
+function formatWindowLength(window: RateLimitWindow | null): string {
+  if (!window) return "No data";
+  return `${window.window_minutes} min`;
+}
+
+function formatResetDate(window: RateLimitWindow, snapshot: Snapshot): string {
+  const reset = getResetDisplay(window, snapshot.capturedAt);
+  return reset ? reset.resetAt.toLocaleString() : "unknown";
+}
+
+function formatBar(percent: number): string {
+  const pct = clampPercent(percent);
+  const filled = pct > 0 ? Math.max(1, Math.round((pct / 100) * BAR_WIDTH)) : 0;
+  return `[${"#".repeat(filled)}${"-".repeat(BAR_WIDTH - filled)}]`;
+}
+
+function clampPercent(percent: number): number {
+  if (!Number.isFinite(percent)) return 0;
+  return Math.min(100, Math.max(0, percent));
 }

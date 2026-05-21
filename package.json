@@ -26,8 +26,12 @@
         "title": "Codex Usage: Refresh"
       },
       {
-        "command": "codexUsage.showDetails",
-        "title": "Codex Usage: Show Details"
+        "command": "codexUsage.showUsage",
+        "title": "Codex Usage: Show Usage"
+      },
+      {
+        "command": "codexUsage.showMoreInformation",
+        "title": "Codex Usage: Show More Information"
       },
       {
         "command": "codexUsage.openSessionsFolder",
@@ -53,16 +57,6 @@
           "default": 7,
           "minimum": 1,
           "description": "How many days back to search for rollout files."
-        },
-        "codexUsage.showSession": {
-          "type": "boolean",
-          "default": true,
-          "description": "Show the current session (5h) usage status bar item."
-        },
-        "codexUsage.showWeekly": {
-          "type": "boolean",
-          "default": true,
-          "description": "Show the weekly usage status bar item."
         }
       }
     }

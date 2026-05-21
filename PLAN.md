@@ -7,7 +7,7 @@ A small VS Code extension that monitors OpenAI Codex CLI usage and surfaces
 
 - Show **current session usage** (Codex "primary" rate limit, ~5h window).
 - Show **weekly usage** (Codex "secondary" rate limit, ~7d window).
-- Stay out of the way: status bar first, details panel on click.
+- Stay out of the way: one status bar item with native hover/click details.
 - Read-only: no network, no auth, no telemetry. Just parse local files.
 
 Out of scope (for v1): per-model breakdown, cost tracking, historical
@@ -49,26 +49,27 @@ Edge cases to handle:
 
 ## UX
 
-**Status bar (left)**, two items:
+**Status bar (left)**, one item:
 
 ```
-$(pulse) Codex 12% · 4h59m     ⟶  session (primary)
-$(calendar) Week 22% · 4d 2h   ⟶  weekly  (secondary)
+$(pulse) Codex 12% · 4h59m | Week 22% · 4d 2h
 ```
 
 Color: default until `used_percent >= 75` (warning), `>= 90` (error)
-via `backgroundColor`.
+via `backgroundColor`, using the highest visible limit.
 
-Tooltip per item: exact percent, window length, exact reset time
-(localized), path of the rollout file the data came from.
+Tooltip: current-session and weekly text bars plus localized reset dates.
+Extra metadata stays behind a **More information** link.
 
-Click → opens a small **details webview** with both meters, raw numbers,
-last-updated timestamp, and a Refresh button.
+Click → opens a native VS Code quick-pick style summary with both meters.
+Selecting **More information** shows captured time, source file, and window
+lengths without opening a webview.
 
 ## Commands
 
 - `codexUsage.refresh` — re-scan and update.
-- `codexUsage.showDetails` — open the details panel.
+- `codexUsage.showUsage` — show the native usage summary.
+- `codexUsage.showMoreInformation` — show captured/source/window metadata.
 - `codexUsage.openSessionsFolder` — reveal `~/.codex/sessions` in the OS.
 
 ## Settings (`contributes.configuration`)
@@ -76,8 +77,6 @@ last-updated timestamp, and a Refresh button.
 - `codexUsage.codexHome` (string, default `""` → resolves to `~/.codex`).
 - `codexUsage.refreshIntervalSeconds` (number, default `60`).
 - `codexUsage.lookbackDays` (number, default `7`).
-- `codexUsage.showWeekly` (boolean, default `true`).
-- `codexUsage.showSession` (boolean, default `true`).
 
 ## Architecture
 
@@ -85,8 +84,7 @@ last-updated timestamp, and a Refresh button.
 src/
   extension.ts        activate/deactivate, wires everything
   codexReader.ts      find latest rollout, parse last token_count
-  statusBar.ts        two StatusBarItems + formatting
-  detailsPanel.ts     webview for details view
+  statusBar.ts        single StatusBarItem + native summary formatting
   format.ts           percent / duration helpers
   types.ts            RateLimits, Snapshot
 ```
@@ -115,8 +113,8 @@ Build: `tsc` to `out/`. No bundler needed for v1.
    activates on startup.
 2. **Reader** — `codexReader.ts` + a small unit-style smoke test driven
    by a fixture JSONL.
-3. **Status bar** — wire reader → two status bar items with polling.
-4. **Details webview** — click-through panel.
+3. **Status bar** — wire reader → one combined status bar item with polling.
+4. **Native details** — hover/click summary and More information metadata.
 5. **Settings + commands** — configurable home dir, refresh, reveal.
 6. **README** — install/run/limitations, note re: `null` rate_limits.
 

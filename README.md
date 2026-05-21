@@ -6,14 +6,15 @@ the latest rollout file under `~/.codex/sessions/`.
 
 ## What you get
 
-Two status bar items on the left:
+A single status bar item on the left:
 
 ```
-$(pulse) Codex 12% · 4h59m       current session (primary, ~5h)
-$(calendar) Week 22% · 4d 2h     weekly (secondary, ~7d)
+$(pulse) Codex 12% · 4h59m | Week 22% · 4d 2h
 ```
 
-Click either one for a details panel.
+Hover or click the item to see current-session and weekly usage bars with reset
+dates. Use **More information** for the captured time, source file, and window
+lengths.
 
 ## How it works
 
@@ -31,12 +32,12 @@ No network, no auth, no telemetry.
 - `codexUsage.codexHome` — override `~/.codex` if you keep it elsewhere.
 - `codexUsage.refreshIntervalSeconds` — poll interval (default 60).
 - `codexUsage.lookbackDays` — how far back to scan (default 7).
-- `codexUsage.showSession` / `codexUsage.showWeekly` — toggle each item.
 
 ## Commands
 
 - **Codex Usage: Refresh**
-- **Codex Usage: Show Details**
+- **Codex Usage: Show Usage**
+- **Codex Usage: Show More Information**
 - **Codex Usage: Open Sessions Folder**
 
 ## Build
