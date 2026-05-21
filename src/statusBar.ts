@@ -2,7 +2,10 @@ import * as vscode from "vscode";
 import { Snapshot, RateLimitWindow } from "./types";
 import { formatPercent, formatDuration, getResetDisplay } from "./format";
 
-const BAR_WIDTH = 20;
+const TEXT_BAR_WIDTH = 16;
+const SVG_BAR_WIDTH = 180;
+const SVG_BAR_HEIGHT = 10;
+const SVG_BAR_RADIUS = 5;
 
 export class StatusBar {
   private item: vscode.StatusBarItem;
@@ -104,7 +107,7 @@ function appendUsageWindow(
   }
 
   const pct = clampPercent(window.used_percent);
-  md.appendMarkdown(`\`${formatBar(pct)}\` ${formatPercent(pct)}\n\n`);
+  md.appendMarkdown(`${formatSvgBar(pct, `${label} usage ${formatPercent(pct)}`)} ${formatPercent(pct)}\n\n`);
   md.appendMarkdown(`Resets ${formatResetDate(window, snapshot)}`);
 }
 
@@ -116,7 +119,7 @@ function createUsageQuickPickItem(
   if (!window) {
     return {
       label,
-      description: formatBar(0),
+      description: formatTextBar(0),
       detail: "No data",
     };
   }
@@ -124,7 +127,7 @@ function createUsageQuickPickItem(
   const pct = clampPercent(window.used_percent);
   return {
     label: `${label} ${formatPercent(pct)}`,
-    description: formatBar(pct),
+    description: formatTextBar(pct),
     detail: `Resets ${formatResetDate(window, snapshot)}`,
   };
 }
@@ -147,10 +150,28 @@ function formatResetDate(window: RateLimitWindow, snapshot: Snapshot): string {
   return reset ? reset.resetAt.toLocaleString() : "unknown";
 }
 
-function formatBar(percent: number): string {
+function formatTextBar(percent: number): string {
   const pct = clampPercent(percent);
-  const filled = pct > 0 ? Math.max(1, Math.round((pct / 100) * BAR_WIDTH)) : 0;
-  return `[${"#".repeat(filled)}${"-".repeat(BAR_WIDTH - filled)}]`;
+  const filled = pct > 0 ? Math.max(1, Math.round((pct / 100) * TEXT_BAR_WIDTH)) : 0;
+  return `${"█".repeat(filled)}${"░".repeat(TEXT_BAR_WIDTH - filled)}`;
+}
+
+function formatSvgBar(percent: number, altText: string): string {
+  const pct = clampPercent(percent);
+  const fillWidth = Math.round((pct / 100) * SVG_BAR_WIDTH);
+  const svg = [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${SVG_BAR_WIDTH}" height="${SVG_BAR_HEIGHT}" viewBox="0 0 ${SVG_BAR_WIDTH} ${SVG_BAR_HEIGHT}">`,
+    `<rect width="${SVG_BAR_WIDTH}" height="${SVG_BAR_HEIGHT}" rx="${SVG_BAR_RADIUS}" fill="#2d2d30"/>`,
+    `<rect width="${fillWidth}" height="${SVG_BAR_HEIGHT}" rx="${SVG_BAR_RADIUS}" fill="#0078d4"/>`,
+    `<rect x="0.5" y="0.5" width="${SVG_BAR_WIDTH - 1}" height="${SVG_BAR_HEIGHT - 1}" rx="${SVG_BAR_RADIUS - 0.5}" fill="none" stroke="#6e7681" stroke-opacity="0.8"/>`,
+    "</svg>",
+  ].join("");
+  const encoded = Buffer.from(svg).toString("base64");
+  return `![${escapeMarkdownAltText(altText)}](data:image/svg+xml;base64,${encoded})`;
+}
+
+function escapeMarkdownAltText(text: string): string {
+  return text.replace(/[[\]\\]/g, "\\$&");
 }
 
 function clampPercent(percent: number): number {
