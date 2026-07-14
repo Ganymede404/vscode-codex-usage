@@ -20,10 +20,13 @@ lengths.
 
 Codex CLI writes JSONL rollout files at
 `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`. Each `token_count` event
-includes a `rate_limits` object with `primary` (5h) and `secondary` (weekly)
-windows. The extension walks back up to N days, finds the most recently
-modified rollout, and reads the last `token_count` event with non-null
-`rate_limits`.
+includes a `rate_limits` object with up to two windows (`primary` and
+`secondary`). Which windows exist depends on your plan: some accounts get a
+5h + weekly pair, others a single weekly (or monthly) window. Like Codex's
+own `/status`, the extension labels each window by its length
+(`5h`/`Day`/`Week`/`Month`) rather than assuming primary = 5h. The extension
+walks back up to N days, finds the most recently modified rollout, and reads
+the last `token_count` event with non-null `rate_limits`.
 
 Both the current schema (`resets_at` Unix timestamp, optional
 `window_minutes`, plus `plan_type` and `credits`) and the legacy schema

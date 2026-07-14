@@ -1,6 +1,43 @@
 import * as vscode from "vscode";
 import { Snapshot, RateLimitWindow, CreditsSnapshot } from "./types";
-import { formatPercent, formatDuration, getResetDisplay } from "./format";
+import {
+  formatPercent,
+  formatDuration,
+  getResetDisplay,
+  windowLongLabel,
+  windowShortLabel,
+  WindowSlot,
+} from "./format";
+
+interface LabeledWindow {
+  slot: WindowSlot;
+  window: RateLimitWindow;
+  shortLabel: string;
+  longLabel: string;
+}
+
+// Codex only reports the windows that apply to the account: some plans get a
+// 5h + weekly pair, others a single weekly (or monthly) window. Render what
+// is present instead of assuming primary=5h and secondary=weekly.
+function collectWindows(snapshot: Snapshot): LabeledWindow[] {
+  const out: LabeledWindow[] = [];
+  const slots: WindowSlot[] = ["primary", "secondary"];
+  for (const slot of slots) {
+    const window = snapshot.rateLimits[slot];
+    if (!window) continue;
+    out.push({
+      slot,
+      window,
+      shortLabel: windowShortLabel(window, slot),
+      longLabel: windowLongLabel(window, slot),
+    });
+  }
+  return out;
+}
+
+function windowIcon(shortLabel: string): string {
+  return shortLabel === "5h" || shortLabel === "Usage" ? "$(pulse)" : "$(calendar)";
+}
 
 const TEXT_BAR_WIDTH = 16;
 const SVG_BAR_WIDTH = 180;
@@ -31,11 +68,16 @@ export class StatusBar {
       return;
     }
 
-    const { primary, secondary } = snapshot.rateLimits;
-    this.item.text = `$(pulse) ${formatStatusSegment("Codex", primary ?? null, snapshot)} | ${formatStatusSegment("Week", secondary ?? null, snapshot)}`;
-    this.item.tooltip = renderUsageTooltip(snapshot);
+    const windows = collectWindows(snapshot);
+    if (windows.length === 0) {
+      this.item.text = "$(pulse) Codex —";
+    } else {
+      const segments = windows.map((w) => formatStatusSegment(w.shortLabel, w.window, snapshot));
+      this.item.text = `$(pulse) Codex ${segments.join(" | ")}`;
+    }
+    this.item.tooltip = renderUsageTooltip(snapshot, windows);
 
-    const highestPercent = Math.max(primary?.used_percent ?? 0, secondary?.used_percent ?? 0);
+    const highestPercent = windows.reduce((max, w) => Math.max(max, w.window.used_percent ?? 0), 0);
     if (highestPercent >= 90) {
       this.item.backgroundColor = new vscode.ThemeColor("statusBarItem.errorBackground");
     } else if (highestPercent >= 75) {
@@ -49,14 +91,21 @@ export class StatusBar {
 }
 
 export function createUsageSummaryItems(snapshot: Snapshot): vscode.QuickPickItem[] {
-  return [
-    createUsageQuickPickItem("$(pulse) Current session", snapshot.rateLimits.primary ?? null, snapshot),
-    createUsageQuickPickItem("$(calendar) Weekly", snapshot.rateLimits.secondary ?? null, snapshot),
-    {
-      label: "$(info) More information",
-      detail: "Captured time, source file, and rate-limit window lengths.",
-    },
-  ];
+  const windows = collectWindows(snapshot);
+  const items: vscode.QuickPickItem[] = windows.map((w) =>
+    createUsageQuickPickItem(`${windowIcon(w.shortLabel)} ${w.longLabel}`, w.window, snapshot),
+  );
+  if (items.length === 0) {
+    items.push({
+      label: "$(pulse) Rate limits",
+      detail: "No rate-limit windows reported by Codex.",
+    });
+  }
+  items.push({
+    label: "$(info) More information",
+    detail: "Captured time, source file, and rate-limit window lengths.",
+  });
+  return items;
 }
 
 export function createMoreInformationItems(snapshot: Snapshot): vscode.QuickPickItem[] {
@@ -69,15 +118,14 @@ export function createMoreInformationItems(snapshot: Snapshot): vscode.QuickPick
       label: "$(file) Source",
       detail: snapshot.sourceFile,
     },
-    {
-      label: "$(pulse) Current session window",
-      detail: formatWindowLength(snapshot.rateLimits.primary ?? null),
-    },
-    {
-      label: "$(calendar) Weekly window",
-      detail: formatWindowLength(snapshot.rateLimits.secondary ?? null),
-    },
   ];
+
+  for (const w of collectWindows(snapshot)) {
+    items.push({
+      label: `${windowIcon(w.shortLabel)} ${w.longLabel} window`,
+      detail: formatWindowLength(w.window),
+    });
+  }
 
   if (snapshot.rateLimits.plan_type) {
     items.push({
@@ -108,14 +156,19 @@ export function isMoreInformationItem(item: vscode.QuickPickItem | undefined): b
   return item?.label === "$(info) More information";
 }
 
-function renderUsageTooltip(snapshot: Snapshot): vscode.MarkdownString {
+function renderUsageTooltip(snapshot: Snapshot, windows: LabeledWindow[]): vscode.MarkdownString {
   const md = new vscode.MarkdownString(undefined, true);
   md.isTrusted = { enabledCommands: ["codexUsage.showMoreInformation"] };
 
   md.appendMarkdown("**Codex usage**\n\n");
-  appendUsageWindow(md, "Current session", snapshot.rateLimits.primary ?? null, snapshot);
-  md.appendMarkdown("\n\n");
-  appendUsageWindow(md, "Weekly", snapshot.rateLimits.secondary ?? null, snapshot);
+  if (windows.length === 0) {
+    md.appendMarkdown("No rate-limit windows reported\n");
+  } else {
+    windows.forEach((w, i) => {
+      if (i > 0) md.appendMarkdown("\n\n");
+      appendUsageWindow(md, w.longLabel, w.window, snapshot);
+    });
+  }
   md.appendMarkdown("\n\n[More information](command:codexUsage.showMoreInformation)");
 
   return md;
@@ -124,15 +177,10 @@ function renderUsageTooltip(snapshot: Snapshot): vscode.MarkdownString {
 function appendUsageWindow(
   md: vscode.MarkdownString,
   label: string,
-  window: RateLimitWindow | null,
+  window: RateLimitWindow,
   snapshot: Snapshot,
 ) {
   md.appendMarkdown(`**${label}**\n\n`);
-  if (!window) {
-    md.appendMarkdown("No data\n");
-    return;
-  }
-
   const pct = clampPercent(window.used_percent);
   md.appendMarkdown(`${formatSvgBar(pct, `${label} usage ${formatPercent(pct)}`)} ${formatPercent(pct)}\n\n`);
   md.appendMarkdown(`Resets ${formatResetDate(window, snapshot)}`);
@@ -140,17 +188,9 @@ function appendUsageWindow(
 
 function createUsageQuickPickItem(
   label: string,
-  window: RateLimitWindow | null,
+  window: RateLimitWindow,
   snapshot: Snapshot,
 ): vscode.QuickPickItem {
-  if (!window) {
-    return {
-      label,
-      description: formatTextBar(0),
-      detail: "No data",
-    };
-  }
-
   const pct = clampPercent(window.used_percent);
   return {
     label: `${label} ${formatPercent(pct)}`,
@@ -159,9 +199,7 @@ function createUsageQuickPickItem(
   };
 }
 
-function formatStatusSegment(label: string, window: RateLimitWindow | null, snapshot: Snapshot): string {
-  if (!window) return `${label} —`;
-
+function formatStatusSegment(label: string, window: RateLimitWindow, snapshot: Snapshot): string {
   const reset = getResetDisplay(window, snapshot.capturedAt);
   const resetDuration = reset ? formatDuration(reset.secondsRemaining) : "unknown";
   return `${label} ${formatPercent(window.used_percent)} · ${resetDuration}`;
