@@ -23,6 +23,55 @@ export function formatResetTime(secondsFromNow: number, now: Date = new Date()):
   return reset.toLocaleString();
 }
 
+export type WindowSlot = "primary" | "secondary";
+
+const MINUTES_5H = 5 * 60;
+const MINUTES_DAY = 24 * 60;
+const MINUTES_WEEK = 7 * MINUTES_DAY;
+const MINUTES_MONTH = 30 * MINUTES_DAY;
+const MINUTES_YEAR = 365 * MINUTES_DAY;
+
+function isApproximateWindow(minutes: number, expected: number): boolean {
+  return minutes >= expected * 0.95 && minutes <= expected * 1.05;
+}
+
+// Mirrors Codex CLI's own labeling: windows are identified by their length,
+// not by whether they arrive in the primary or secondary slot. The server
+// only sends the windows that apply to the account, so the primary slot can
+// hold a weekly (or monthly) window when no 5h limit is reported.
+export function windowShortLabel(window: RateLimitWindow, slot: WindowSlot): string {
+  const minutes = window.window_minutes;
+  if (typeof minutes === "number" && Number.isFinite(minutes)) {
+    const m = Math.max(0, minutes);
+    if (isApproximateWindow(m, MINUTES_5H)) return "5h";
+    if (isApproximateWindow(m, MINUTES_DAY)) return "Day";
+    if (isApproximateWindow(m, MINUTES_WEEK)) return "Week";
+    if (isApproximateWindow(m, MINUTES_MONTH)) return "Month";
+    if (isApproximateWindow(m, MINUTES_YEAR)) return "Year";
+  }
+  return slot === "secondary" ? "Secondary" : "Usage";
+}
+
+export function windowLongLabel(window: RateLimitWindow, slot: WindowSlot): string {
+  const short = windowShortLabel(window, slot);
+  switch (short) {
+    case "5h":
+      return "5h limit";
+    case "Day":
+      return "Daily limit";
+    case "Week":
+      return "Weekly limit";
+    case "Month":
+      return "Monthly limit";
+    case "Year":
+      return "Annual limit";
+    case "Secondary":
+      return "Secondary limit";
+    default:
+      return "Usage limit";
+  }
+}
+
 export interface ResetDisplay {
   secondsRemaining: number;
   resetAt: Date;

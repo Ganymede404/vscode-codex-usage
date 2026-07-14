@@ -68,8 +68,16 @@ function extractRateLimits(line: string): RateLimits | null {
   if (!rl) return null;
   const primary = rl.primary ?? null;
   const secondary = rl.secondary ?? null;
-  if (!primary && !secondary) return null;
-  return { primary, secondary };
+  const credits = rl.credits ?? null;
+  if (!primary && !secondary && !credits) return null;
+  return {
+    primary,
+    secondary,
+    credits,
+    plan_type: typeof rl.plan_type === "string" ? rl.plan_type : null,
+    limit_id: typeof rl.limit_id === "string" ? rl.limit_id : null,
+    limit_name: typeof rl.limit_name === "string" ? rl.limit_name : null,
+  };
 }
 
 async function lastRateLimitsInFile(filePath: string): Promise<RateLimits | null> {

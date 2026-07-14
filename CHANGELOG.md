@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.1
+
+- Support the current Codex CLI rate-limit schema: `resets_at` Unix timestamps
+  (replacing `resets_in_seconds`) and optional `window_minutes`. Legacy
+  rollouts keep working.
+- Label rate-limit windows by their actual length (`5h`, `Day`, `Week`,
+  `Month`) instead of assuming primary = current session (5h) and
+  secondary = weekly, matching Codex's own `/status` behavior. Accounts that
+  only report a weekly window no longer see it mislabeled as the session
+  limit next to an empty "Week —" slot.
+- Hide windows Codex does not report instead of showing empty placeholders.
+- Read the new snapshot fields Codex now reports: `plan_type`, `credits`, and
+  `limit_name`/`limit_id`.
+- Show plan and credits in the `More information` view when present.
+- Keep snapshots that report only credits (no rate-limit windows) instead of
+  skipping them.
+- Show "Unknown" instead of a broken window length when Codex omits
+  `window_minutes`.
+
 ## 0.1.0
 
 - Prepare the first public release version.
