@@ -25,6 +25,11 @@ windows. The extension walks back up to N days, finds the most recently
 modified rollout, and reads the last `token_count` event with non-null
 `rate_limits`.
 
+Both the current schema (`resets_at` Unix timestamp, optional
+`window_minutes`, plus `plan_type` and `credits`) and the legacy schema
+(`resets_in_seconds`) are supported, so rollouts from older Codex versions
+keep working.
+
 No network, no auth, no telemetry.
 
 ## Settings

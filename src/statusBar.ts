@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Snapshot, RateLimitWindow } from "./types";
+import { Snapshot, RateLimitWindow, CreditsSnapshot } from "./types";
 import { formatPercent, formatDuration, getResetDisplay } from "./format";
 
 const TEXT_BAR_WIDTH = 16;
@@ -60,7 +60,7 @@ export function createUsageSummaryItems(snapshot: Snapshot): vscode.QuickPickIte
 }
 
 export function createMoreInformationItems(snapshot: Snapshot): vscode.QuickPickItem[] {
-  return [
+  const items: vscode.QuickPickItem[] = [
     {
       label: "$(clock) Captured",
       detail: snapshot.capturedAt.toLocaleString(),
@@ -78,6 +78,30 @@ export function createMoreInformationItems(snapshot: Snapshot): vscode.QuickPick
       detail: formatWindowLength(snapshot.rateLimits.secondary ?? null),
     },
   ];
+
+  if (snapshot.rateLimits.plan_type) {
+    items.push({
+      label: "$(account) Plan",
+      detail: snapshot.rateLimits.plan_type,
+    });
+  }
+
+  const credits = formatCredits(snapshot.rateLimits.credits ?? null);
+  if (credits) {
+    items.push({
+      label: "$(credit-card) Credits",
+      detail: credits,
+    });
+  }
+
+  return items;
+}
+
+function formatCredits(credits: CreditsSnapshot | null): string | null {
+  if (!credits) return null;
+  if (credits.unlimited) return "Unlimited";
+  if (!credits.has_credits) return "No credits";
+  return credits.balance ? `Balance: ${credits.balance}` : "Available";
 }
 
 export function isMoreInformationItem(item: vscode.QuickPickItem | undefined): boolean {
@@ -145,6 +169,9 @@ function formatStatusSegment(label: string, window: RateLimitWindow | null, snap
 
 function formatWindowLength(window: RateLimitWindow | null): string {
   if (!window) return "No data";
+  if (typeof window.window_minutes !== "number" || !Number.isFinite(window.window_minutes)) {
+    return "Unknown";
+  }
   return `${window.window_minutes} min`;
 }
 
