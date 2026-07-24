@@ -1,66 +1,75 @@
-# vscode-codex-usage
+# Codex Usage for VS Code
 
-A tiny VS Code extension that shows your **OpenAI Codex CLI** usage in the
-status bar — current session (5h window) and weekly window — by reading
-the latest rollout file under `~/.codex/sessions/`.
+A lightweight VS Code extension that shows your OpenAI Codex CLI rate limits
+in the status bar. It reads local Codex session data and requires no network
+access, authentication, or telemetry.
 
-## What you get
+## Features
 
-A single status bar item on the left:
+- Shows each available rate-limit window, usage percentage, and time to reset.
+- Provides usage bars and exact reset times on hover or click.
+- Adapts to the windows reported by your plan, including 5-hour, daily,
+  weekly, and monthly limits.
+- Displays plan, credits, and spend-control information when available.
+- Supports current and legacy Codex rollout schemas.
 
+The status bar displays a compact summary such as:
+
+```text
+Codex 5h 12% · 4h59m | Week 22% · 4d 2h
 ```
-$(pulse) Codex 12% · 4h59m | Week 22% · 4d 2h
+
+## Installation
+
+1. Download the latest `.vsix` file from
+   [GitHub Releases](https://github.com/Ganymede404/vscode-codex-usage/releases).
+2. In VS Code, run **Extensions: Install from VSIX...** from the Command
+   Palette and select the downloaded file.
+
+VS Code 1.85 or later and an existing Codex CLI session are required.
+
+## How It Works
+
+Codex CLI writes JSONL rollout files to:
+
+```text
+~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl
 ```
 
-Hover or click the item to see current-session and weekly usage bars with reset
-dates. Use **More information** for the captured time, source file, and window
-lengths.
-
-## How it works
-
-Codex CLI writes JSONL rollout files at
-`~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`. Each `token_count` event
-includes a `rate_limits` object with up to two windows (`primary` and
-`secondary`). Which windows exist depends on your plan: some accounts get a
-5h + weekly pair, others a single weekly (or monthly) window. Like Codex's
-own `/status`, the extension labels each window by its length
-(`5h`/`Day`/`Week`/`Month`) rather than assuming primary = 5h. The extension
-walks back up to N days, finds the most recently modified rollout, and reads
-the last `token_count` event with non-null `rate_limits`.
-
-Both the current schema (`resets_at` Unix timestamp, optional
-`window_minutes`, plus `plan_type` and `credits`) and the legacy schema
-(`resets_in_seconds`) are supported, so rollouts from older Codex versions
-keep working.
-
-No network, no auth, no telemetry.
+The extension scans recent rollouts and uses the latest `token_count` event
+with rate-limit data. Windows are labeled by their reported duration rather
+than by their `primary` or `secondary` slot. Both `resets_at` and the legacy
+`resets_in_seconds` field are supported.
 
 ## Settings
 
-- `codexUsage.codexHome` — override `~/.codex` if you keep it elsewhere.
-- `codexUsage.refreshIntervalSeconds` — poll interval (default 60).
-- `codexUsage.lookbackDays` — how far back to scan (default 7).
+| Setting | Default | Description |
+| --- | --- | --- |
+| `codexUsage.codexHome` | `~/.codex` | Codex home directory. |
+| `codexUsage.refreshIntervalSeconds` | `60` | How often to refresh usage, in seconds. |
+| `codexUsage.lookbackDays` | `7` | Number of days to scan for rollout files. |
 
 ## Commands
 
-- **Codex Usage: Refresh**
-- **Codex Usage: Show Usage**
-- **Codex Usage: Show More Information**
-- **Codex Usage: Open Sessions Folder**
+| Command | Description |
+| --- | --- |
+| **Codex Usage: Refresh** | Refresh the current usage snapshot. |
+| **Codex Usage: Show Usage** | Open the usage summary. |
+| **Codex Usage: Show More Information** | Show snapshot and account details. |
+| **Codex Usage: Open Sessions Folder** | Reveal the Codex sessions directory. |
 
-## Build
+## Development
 
 ```sh
 npm install
 npm run compile
 ```
 
-Then press F5 in VS Code to launch an Extension Development Host.
+Press `F5` in VS Code to launch an Extension Development Host.
 
 ## Limitations
 
-- In Codex `exec` mode the CLI emits `rate_limits: null`. The extension
-  skips those events; if every recent event is null you'll see "—" until
-  an interactive session produces a populated event.
-- This is a snapshot from the most recent rollout — it doesn't refresh
-  numbers faster than Codex itself writes them.
+- Codex `exec` mode may emit `rate_limits: null`. These events are skipped;
+  usage remains unavailable until Codex writes a populated event.
+- Usage reflects the latest local rollout snapshot and cannot update more
+  frequently than Codex writes that data.
