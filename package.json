@@ -1,7 +1,7 @@
 {
   "name": "vscode-codex-usage",
   "displayName": "Codex Usage",
-  "description": "Show current-session (5h) and weekly Codex CLI usage in the VS Code status bar.",
+  "description": "Show Codex CLI usage in the VS Code status bar.",
   "version": "0.1.2",
   "publisher": "ganymede404",
   "icon": "images/icon.png",
@@ -18,7 +18,7 @@
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Other"
+    "AI", "Visualization"
   ],
   "main": "./out/extension.js",
   "activationEvents": [
