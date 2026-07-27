@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2
+
+- Read the newest `rate_limits` fields Codex reports: a per-account
+  `individual_limit` spend-control snapshot, `spend_control_reached`, and
+  `rate_limit_reached_type`. Surface them in the `More information` view when
+  present.
+
 ## 0.1.1
 
 - Support the current Codex CLI rate-limit schema: `resets_at` Unix timestamps

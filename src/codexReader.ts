@@ -77,6 +77,10 @@ function extractRateLimits(line: string): RateLimits | null {
     plan_type: typeof rl.plan_type === "string" ? rl.plan_type : null,
     limit_id: typeof rl.limit_id === "string" ? rl.limit_id : null,
     limit_name: typeof rl.limit_name === "string" ? rl.limit_name : null,
+    individual_limit: rl.individual_limit ?? null,
+    spend_control_reached: typeof rl.spend_control_reached === "boolean" ? rl.spend_control_reached : null,
+    rate_limit_reached_type:
+      typeof rl.rate_limit_reached_type === "string" ? rl.rate_limit_reached_type : null,
   };
 }
 

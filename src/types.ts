@@ -14,6 +14,15 @@ export interface CreditsSnapshot {
   balance?: string | null;
 }
 
+// A separate spend-control limit some plans report alongside the primary/
+// secondary rate-limit windows (e.g. a workspace budget).
+export interface SpendControlLimitSnapshot {
+  limit: string;
+  used: string;
+  remaining_percent: number;
+  resets_at: number;
+}
+
 export interface RateLimits {
   primary?: RateLimitWindow | null;
   secondary?: RateLimitWindow | null;
@@ -21,6 +30,10 @@ export interface RateLimits {
   plan_type?: string | null;
   limit_id?: string | null;
   limit_name?: string | null;
+  individual_limit?: SpendControlLimitSnapshot | null;
+  spend_control_reached?: boolean | null;
+  // e.g. "rate_limit_reached", "workspace_owner_credits_depleted", ...
+  rate_limit_reached_type?: string | null;
 }
 
 export interface Snapshot {

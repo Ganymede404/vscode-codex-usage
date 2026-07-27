@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Snapshot, RateLimitWindow, CreditsSnapshot } from "./types";
+import { Snapshot, RateLimitWindow, CreditsSnapshot, SpendControlLimitSnapshot } from "./types";
 import {
   formatPercent,
   formatDuration,
@@ -142,6 +142,21 @@ export function createMoreInformationItems(snapshot: Snapshot): vscode.QuickPick
     });
   }
 
+  const individualLimit = formatIndividualLimit(snapshot.rateLimits.individual_limit ?? null);
+  if (individualLimit) {
+    items.push({
+      label: "$(law) Spend limit",
+      detail: individualLimit,
+    });
+  }
+
+  if (snapshot.rateLimits.spend_control_reached) {
+    items.push({
+      label: "$(warning) Spend control reached",
+      detail: formatRateLimitReachedType(snapshot.rateLimits.rate_limit_reached_type ?? null),
+    });
+  }
+
   return items;
 }
 
@@ -150,6 +165,19 @@ function formatCredits(credits: CreditsSnapshot | null): string | null {
   if (credits.unlimited) return "Unlimited";
   if (!credits.has_credits) return "No credits";
   return credits.balance ? `Balance: ${credits.balance}` : "Available";
+}
+
+function formatIndividualLimit(limit: SpendControlLimitSnapshot | null): string | null {
+  if (!limit) return null;
+  return `${limit.used} / ${limit.limit} (${limit.remaining_percent}% remaining)`;
+}
+
+function formatRateLimitReachedType(type: string | null): string {
+  if (!type) return "Limit reached";
+  return type
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
 }
 
 export function isMoreInformationItem(item: vscode.QuickPickItem | undefined): boolean {
