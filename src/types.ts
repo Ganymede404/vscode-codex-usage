@@ -36,8 +36,17 @@ export interface RateLimits {
   rate_limit_reached_type?: string | null;
 }
 
+// Where a snapshot came from: the local rollout JSONL files (offline) or a
+// live query against the Codex backend using the logged-in credential.
+export type SnapshotSource = "rollout" | "api";
+
 export interface Snapshot {
   rateLimits: RateLimits;
+  // Human-readable origin of the snapshot. For rollout snapshots this is the
+  // JSONL path; for API snapshots it is the endpoint URL.
   sourceFile: string;
   capturedAt: Date;
+  // Distinguishes an offline rollout read from a live API query so the UI can
+  // label the source and pick the right fallback behaviour.
+  source: SnapshotSource;
 }

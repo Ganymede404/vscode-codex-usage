@@ -7,27 +7,35 @@ description: Maintain the vscode-codex-usage VS Code extension. Use when changin
 
 ## Purpose
 
-This repo is a TypeScript VS Code extension that reads local Codex CLI rollout
-JSONL files from `~/.codex/sessions/` and shows primary/session and
-secondary/weekly usage in one VS Code status bar item.
+This repo is a TypeScript VS Code extension that shows Codex CLI primary/session
+and secondary/weekly usage in one VS Code status bar item. Data comes either
+from local rollout JSONL files in `~/.codex/sessions/` (offline) or from a live
+query against the Codex usage endpoint using the logged-in credential (online),
+selected via `codexUsage.source`.
 
 ## Current Shape
 
-- `src/extension.ts`: activation, polling, command registration, quick-pick UI.
+- `src/extension.ts`: activation, polling, command registration, quick-pick UI,
+  and source selection (`auto`/`api`/`rollout`) with rollout fallback.
 - `src/statusBar.ts`: single `StatusBarItem`, tooltip rendering, native usage and
-  metadata item builders.
+  metadata item builders, compact/full text, source labeling.
 - `src/codexReader.ts`: resolves Codex home, finds recent rollout files, parses
   the latest usable `token_count.rate_limits`.
+- `src/codexAuth.ts`: reads `~/.codex/auth.json` for the OAuth access token and
+  ChatGPT account id (with JWT-claim fallback). Read-only; never refreshes.
+- `src/codexApi.ts`: GETs `chatgpt.com/backend-api/wham/usage` and normalizes the
+  (undocumented) response into `RateLimits`. Throws `CodexApiError`.
 - `src/format.ts`: percent, duration, and reset-time helpers.
-- `src/types.ts`: `RateLimitWindow`, `RateLimits`, and `Snapshot` contracts.
+- `src/types.ts`: `RateLimitWindow`, `RateLimits`, `Snapshot`, `SnapshotSource`.
 - `package.json`: VS Code extension manifest and npm scripts.
 
 ## UI Constraints
 
 - Keep one status bar item. Do not split session and weekly usage back into two
   items unless explicitly requested.
-- Keep the idle status text compact:
+- Default (non-compact) status text stays:
   `$(pulse) Codex <session percent> · <session reset> | Week <weekly percent> · <weekly reset>`.
+  When `codexUsage.compactStatusBar` is on, show only `$(pulse) <highest percent>`.
 - Hover should stay lightweight and native: show only session and weekly usage
   bars plus reset dates, then a `More information` command link.
 - Click should use native VS Code UI such as `showQuickPick`, not a webview,

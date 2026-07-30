@@ -1,5 +1,12 @@
 import * as vscode from "vscode";
 import { Snapshot, RateLimitWindow, CreditsSnapshot, SpendControlLimitSnapshot } from "./types";
+
+export interface StatusBarOptions {
+  // Render a minimal chip (icon + single percent) instead of the full breakdown.
+  compact?: boolean;
+  // Optional status line (e.g. a fallback explanation) surfaced in the tooltip.
+  note?: string;
+}
 import {
   formatPercent,
   formatDuration,
@@ -59,10 +66,11 @@ export class StatusBar {
     this.item.dispose();
   }
 
-  update(snapshot: Snapshot | null) {
+  update(snapshot: Snapshot | null, options: StatusBarOptions = {}) {
+    const compact = options.compact ?? false;
     if (!snapshot) {
-      this.item.text = "$(pulse) Codex —";
-      this.item.tooltip = "No Codex rollout files found. Start a Codex session to populate usage.";
+      this.item.text = compact ? "$(pulse) —" : "$(pulse) Codex —";
+      this.item.tooltip = "No Codex usage data. Start a Codex session or run 'codex login'.";
       this.item.backgroundColor = undefined;
       this.item.show();
       return;
@@ -70,12 +78,14 @@ export class StatusBar {
 
     const windows = collectWindows(snapshot);
     if (windows.length === 0) {
-      this.item.text = "$(pulse) Codex —";
+      this.item.text = compact ? "$(pulse) —" : "$(pulse) Codex —";
+    } else if (compact) {
+      this.item.text = formatCompactText(windows);
     } else {
       const segments = windows.map((w) => formatStatusSegment(w.shortLabel, w.window, snapshot));
       this.item.text = `$(pulse) Codex ${segments.join(" | ")}`;
     }
-    this.item.tooltip = renderUsageTooltip(snapshot, windows);
+    this.item.tooltip = renderUsageTooltip(snapshot, windows, options.note);
 
     const highestPercent = windows.reduce((max, w) => Math.max(max, w.window.used_percent ?? 0), 0);
     if (highestPercent >= 90) {
@@ -108,17 +118,24 @@ export function createUsageSummaryItems(snapshot: Snapshot): vscode.QuickPickIte
   return items;
 }
 
-export function createMoreInformationItems(snapshot: Snapshot): vscode.QuickPickItem[] {
+export function createMoreInformationItems(
+  snapshot: Snapshot,
+  note?: string,
+): vscode.QuickPickItem[] {
   const items: vscode.QuickPickItem[] = [
+    {
+      label: snapshot.source === "api" ? "$(cloud) Source" : "$(file) Source",
+      detail: `${snapshot.source === "api" ? "Live API" : "Rollout file"} — ${snapshot.sourceFile}`,
+    },
     {
       label: "$(clock) Captured",
       detail: snapshot.capturedAt.toLocaleString(),
     },
-    {
-      label: "$(file) Source",
-      detail: snapshot.sourceFile,
-    },
   ];
+
+  if (note) {
+    items.push({ label: "$(info) Status", detail: note });
+  }
 
   for (const w of collectWindows(snapshot)) {
     items.push({
@@ -184,11 +201,15 @@ export function isMoreInformationItem(item: vscode.QuickPickItem | undefined): b
   return item?.label === "$(info) More information";
 }
 
-function renderUsageTooltip(snapshot: Snapshot, windows: LabeledWindow[]): vscode.MarkdownString {
+function renderUsageTooltip(
+  snapshot: Snapshot,
+  windows: LabeledWindow[],
+  note?: string,
+): vscode.MarkdownString {
   const md = new vscode.MarkdownString(undefined, true);
   md.isTrusted = { enabledCommands: ["codexUsage.showMoreInformation"] };
 
-  md.appendMarkdown("**Codex usage**\n\n");
+  md.appendMarkdown(`**Codex usage** · ${sourceLabel(snapshot)}\n\n`);
   if (windows.length === 0) {
     md.appendMarkdown("No rate-limit windows reported\n");
   } else {
@@ -197,9 +218,26 @@ function renderUsageTooltip(snapshot: Snapshot, windows: LabeledWindow[]): vscod
       appendUsageWindow(md, w.longLabel, w.window, snapshot);
     });
   }
+  if (note) {
+    md.appendMarkdown(`\n\n$(info) ${escapeMarkdownAltText(note)}`);
+  }
   md.appendMarkdown("\n\n[More information](command:codexUsage.showMoreInformation)");
 
   return md;
+}
+
+// Icon + label describing where the snapshot came from.
+function sourceLabel(snapshot: Snapshot): string {
+  return snapshot.source === "api" ? "$(cloud) Live API" : "$(file) Rollout file";
+}
+
+// Compact chip: icon + the single highest-used window percent, so the number
+// always matches the warning/error background colour.
+function formatCompactText(windows: LabeledWindow[]): string {
+  const top = windows.reduce((a, b) =>
+    (b.window.used_percent ?? 0) > (a.window.used_percent ?? 0) ? b : a,
+  );
+  return `$(pulse) ${formatPercent(clampPercent(top.window.used_percent))}`;
 }
 
 function appendUsageWindow(

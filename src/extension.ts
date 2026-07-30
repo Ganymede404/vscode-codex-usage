@@ -1,5 +1,7 @@
 import * as vscode from "vscode";
 import { readLatestSnapshot } from "./codexReader";
+import { CodexApiError, readApiSnapshot } from "./codexApi";
+import { isLoggedIn } from "./codexAuth";
 import {
   createMoreInformationItems,
   createUsageSummaryItems,
@@ -8,32 +10,69 @@ import {
 } from "./statusBar";
 import { Snapshot } from "./types";
 
+type UsageSource = "auto" | "api" | "rollout";
+
 let timer: NodeJS.Timeout | undefined;
 let statusBar: StatusBar | undefined;
 let lastSnapshot: Snapshot | null = null;
+let lastNote: string | undefined;
 
 function getConfig() {
   const c = vscode.workspace.getConfiguration("codexUsage");
+  const source = c.get<string>("source", "auto");
   return {
     codexHome: c.get<string>("codexHome", ""),
     refreshIntervalSeconds: c.get<number>("refreshIntervalSeconds", 60),
     lookbackDays: c.get<number>("lookbackDays", 7),
+    source: (["auto", "api", "rollout"].includes(source) ? source : "auto") as UsageSource,
+    compact: c.get<boolean>("compactStatusBar", false),
   };
+}
+
+async function readRollout(cfg: ReturnType<typeof getConfig>): Promise<Snapshot | null> {
+  return readLatestSnapshot({
+    codexHome: cfg.codexHome,
+    lookbackDays: cfg.lookbackDays,
+  });
+}
+
+// Resolve a snapshot according to the configured source. Online modes fall back
+// to the local rollout files whenever the live query can't run (not logged in,
+// expired token, offline), so the status bar keeps working.
+async function resolveSnapshot(
+  cfg: ReturnType<typeof getConfig>,
+): Promise<{ snapshot: Snapshot | null; note?: string }> {
+  const wantApi = cfg.source === "api" || (cfg.source === "auto" && isLoggedIn(cfg.codexHome));
+  if (!wantApi) {
+    return { snapshot: await readRollout(cfg) };
+  }
+
+  try {
+    return { snapshot: await readApiSnapshot({ codexHome: cfg.codexHome }) };
+  } catch (err) {
+    const reason = err instanceof CodexApiError ? err.message : String(err);
+    console.warn("[codex-usage] API query failed, falling back to rollout:", reason);
+    const snapshot = await readRollout(cfg);
+    const note = snapshot
+      ? `Live query unavailable — showing latest rollout snapshot. ${reason}`
+      : reason;
+    return { snapshot, note };
+  }
 }
 
 async function refresh() {
   if (!statusBar) return;
   const cfg = getConfig();
   try {
-    lastSnapshot = await readLatestSnapshot({
-      codexHome: cfg.codexHome,
-      lookbackDays: cfg.lookbackDays,
-    });
+    const result = await resolveSnapshot(cfg);
+    lastSnapshot = result.snapshot;
+    lastNote = result.note;
   } catch (err) {
     lastSnapshot = null;
+    lastNote = undefined;
     console.error("[codex-usage] read failed:", err);
   }
-  statusBar.update(lastSnapshot);
+  statusBar.update(lastSnapshot, { compact: cfg.compact, note: lastNote });
 }
 
 function restartTimer() {
@@ -68,7 +107,7 @@ async function showMoreInformation() {
     return;
   }
 
-  await vscode.window.showQuickPick(createMoreInformationItems(lastSnapshot), {
+  await vscode.window.showQuickPick(createMoreInformationItems(lastSnapshot, lastNote), {
     title: "Codex Usage - More Information",
     placeHolder: "Captured time, source file, and rate-limit windows",
   });

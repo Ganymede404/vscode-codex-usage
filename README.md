@@ -1,22 +1,32 @@
 # Codex Usage for VS Code
 
 A lightweight VS Code extension that shows your OpenAI Codex CLI rate limits
-in the status bar. It reads local Codex session data and requires no network
-access, authentication, or telemetry.
+in the status bar. It can read local Codex session data offline, or query the
+live Codex usage endpoint using the credential you are already logged in with.
 
 ## Features
 
 - Shows each available rate-limit window, usage percentage, and time to reset.
+- **Online or offline:** query the live Codex usage API with your existing
+  login, or read local rollout files with no network access at all.
+- **Compact or full footer:** show a minimal percent chip or the full
+  per-window breakdown.
 - Provides usage bars and exact reset times on hover or click.
 - Adapts to the windows reported by your plan, including 5-hour, daily,
   weekly, and monthly limits.
 - Displays plan, credits, and spend-control information when available.
 - Supports current and legacy Codex rollout schemas.
 
-The status bar displays a compact summary such as:
+The status bar displays a summary such as:
 
 ```text
 Codex 5h 12% · 4h59m | Week 22% · 4d 2h
+```
+
+or, in compact mode:
+
+```text
+$(pulse) 12%
 ```
 
 ## Installation
@@ -30,6 +40,20 @@ VS Code 1.85 or later and an existing Codex CLI session are required.
 
 ## How It Works
 
+### Online (API) mode
+
+When you are logged in with the Codex CLI (`codex login`), the extension can
+read your live usage directly from Codex's backend. It reads the OAuth access
+token and ChatGPT account id already stored in `~/.codex/auth.json` and sends a
+read-only `GET` to `https://chatgpt.com/backend-api/wham/usage`. Nothing is
+written back, and the login token is never refreshed by this extension — if the
+token has expired, run `codex login` (or just use Codex) and the extension picks
+up the refreshed token automatically. This endpoint is undocumented and may
+change; the extension parses it defensively and falls back to rollout files if
+the response does not fit.
+
+### Offline (rollout) mode
+
 Codex CLI writes JSONL rollout files to:
 
 ```text
@@ -41,10 +65,25 @@ with rate-limit data. Windows are labeled by their reported duration rather
 than by their `primary` or `secondary` slot. Both `resets_at` and the legacy
 `resets_in_seconds` field are supported.
 
+### Choosing a source
+
+The `codexUsage.source` setting controls which is used:
+
+- `auto` (default) — query the API when you are logged in, otherwise read
+  rollout files.
+- `api` — always query the API.
+- `rollout` — always read local rollout files (fully offline).
+
+In `auto` and `api` modes, if the live query can't run (not logged in, expired
+token, offline) the extension falls back to the latest rollout snapshot and
+notes why in the tooltip.
+
 ## Settings
 
 | Setting | Default | Description |
 | --- | --- | --- |
+| `codexUsage.source` | `auto` | Data source: `auto`, `api` (online), or `rollout` (offline). |
+| `codexUsage.compactStatusBar` | `false` | Show a compact percent chip instead of the full breakdown. |
 | `codexUsage.codexHome` | `~/.codex` | Codex home directory. |
 | `codexUsage.refreshIntervalSeconds` | `60` | How often to refresh usage, in seconds. |
 | `codexUsage.lookbackDays` | `7` | Number of days to scan for rollout files. |
