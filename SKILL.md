@@ -27,7 +27,9 @@ selected via `codexUsage.source`.
   (undocumented) response into `RateLimits`. Throws `CodexApiError`.
 - `src/format.ts`: percent, duration, and reset-time helpers.
 - `src/types.ts`: `RateLimitWindow`, `RateLimits`, `Snapshot`, `SnapshotSource`.
-- `package.json`: VS Code extension manifest and npm scripts.
+- `icons/codex.woff`: contributed Codex-logo icon font (glyph U+E900) used as the
+  status bar `$(codex)` icon; `icons/codex.svg` is its regeneration source.
+- `package.json`: VS Code extension manifest, `contributes.icons`, npm scripts.
 
 ## UI Constraints
 
@@ -42,9 +44,16 @@ selected via `codexUsage.source`.
   unless the user explicitly asks for custom HTML.
 - Extra metadata belongs behind `More information`: captured time, source file,
   and rate-limit window lengths.
-- Status bar icons use Codicons in `$(name)` syntax. There is no built-in Codex
-  icon, so keep `$(pulse)` unless the user chooses another Codicon or adds a
-  contributed product icon.
+- The leading status bar icon is the contributed Codex logo `$(codex)`, backed
+  by `icons/codex.woff` (glyph U+E900) declared under `contributes.icons` in
+  `package.json`. As a font glyph it is monochrome and inherits the status bar
+  foreground colour, so it adapts to light and dark themes automatically — do
+  not add separate light/dark image assets for the status bar.
+- To regenerate the icon font, rebuild `icons/codex.woff` from `icons/codex.svg`
+  (a 0..24 viewBox logo path) with the `svgicons2svgfont` → `svg2ttf` →
+  `ttf2woff` pipeline, keeping the glyph mapped to U+E900.
+- Other in-menu icons use built-in Codicons in `$(name)` syntax (e.g. `$(pulse)`
+  / `$(calendar)` to distinguish 5h vs weekly windows in the quick pick).
 
 ## Build And Test
 

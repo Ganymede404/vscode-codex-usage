@@ -25,6 +25,15 @@
     "onStartupFinished"
   ],
   "contributes": {
+    "icons": {
+      "codex": {
+        "description": "Codex logo",
+        "default": {
+          "fontPath": "./icons/codex.woff",
+          "fontCharacter": "\\E900"
+        }
+      }
+    },
     "commands": [
       {
         "command": "codexUsage.refresh",

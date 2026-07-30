@@ -23,11 +23,14 @@ The status bar displays a summary such as:
 Codex 5h 12% · 4h59m | Week 22% · 4d 2h
 ```
 
-or, in compact mode:
+or, in compact mode, just the Codex logo and a single percent:
 
 ```text
-$(pulse) 12%
+⊛ 12%
 ```
+
+The leading Codex logo is a contributed monochrome icon font, so it inherits
+the status bar colour and looks right in both light and dark themes.
 
 ## Installation
 

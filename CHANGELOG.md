@@ -18,6 +18,10 @@
 - Add the `codexUsage.compactStatusBar` setting for a compact status bar chip
   (icon + single highest-used percent) as an alternative to the full
   per-window breakdown.
+- Use the Codex logo as the status bar icon (contributed icon font,
+  `icons/codex.woff`) in both compact and non-compact views. As a monochrome
+  glyph it inherits the status bar colour, so it adapts to light and dark
+  themes automatically.
 - Show the active source (Live API vs rollout file) in the tooltip and
   `More information` view.
 
