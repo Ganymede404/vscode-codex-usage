@@ -30,7 +30,9 @@ or, in compact mode, just the Codex logo and a single percent:
 ```
 
 The leading Codex logo is a contributed monochrome icon font, so it inherits
-the status bar colour and looks right in both light and dark themes.
+the status bar colour and looks right in both light and dark themes. The icon
+font is from the [codex-stats](https://github.com/Maol-1997/codex-stats)
+project (MIT); see `icons/NOTICE.md`.
 
 ## Installation
 

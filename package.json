@@ -29,7 +29,7 @@
       "codex": {
         "description": "Codex logo",
         "default": {
-          "fontPath": "./icons/codex.woff",
+          "fontPath": "./icons/codex-icon.woff",
           "fontCharacter": "\\E900"
         }
       }

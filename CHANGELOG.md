@@ -19,9 +19,10 @@
   (icon + single highest-used percent) as an alternative to the full
   per-window breakdown.
 - Use the Codex logo as the status bar icon (contributed icon font,
-  `icons/codex.woff`) in both compact and non-compact views. As a monochrome
-  glyph it inherits the status bar colour, so it adapts to light and dark
-  themes automatically.
+  `icons/codex-icon.woff`) in both compact and non-compact views. As a
+  monochrome glyph it inherits the status bar colour, so it adapts to light and
+  dark themes automatically. The icon font is from the codex-stats project
+  (MIT); attribution is in `icons/NOTICE.md`.
 - Show the active source (Live API vs rollout file) in the tooltip and
   `More information` view.
 
