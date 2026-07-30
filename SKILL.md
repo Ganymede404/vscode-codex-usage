@@ -28,8 +28,7 @@ selected via `codexUsage.source`.
 - `src/format.ts`: percent, duration, and reset-time helpers.
 - `src/types.ts`: `RateLimitWindow`, `RateLimits`, `Snapshot`, `SnapshotSource`.
 - `icons/codex-icon.woff`: contributed Codex-logo icon font (glyph U+E900) used as
-  the status bar `$(codex-logo)` icon, from the codex-stats project (MIT; see
-  `icons/NOTICE.md`).
+  the status bar `$(codex-logo)` icon.
 - `package.json`: VS Code extension manifest, `contributes.icons`, npm scripts.
 
 ## UI Constraints
