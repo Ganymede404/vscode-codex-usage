@@ -18,7 +18,8 @@ selected via `codexUsage.source`.
 - `src/extension.ts`: activation, polling, command registration, quick-pick UI,
   and source selection (`auto`/`api`/`rollout`) with rollout fallback.
 - `src/statusBar.ts`: single `StatusBarItem`, tooltip rendering, native usage and
-  metadata item builders, compact/full text, source labeling.
+  metadata item builders, compact/full text, source labeling, and left/right
+  alignment (recreates the item since alignment is fixed at creation).
 - `src/codexReader.ts`: resolves Codex home, finds recent rollout files, parses
   the latest usable `token_count.rate_limits`.
 - `src/codexAuth.ts`: reads `~/.codex/auth.json` for the OAuth access token and
@@ -49,9 +50,8 @@ selected via `codexUsage.source`.
   `package.json`. As a font glyph it is monochrome and inherits the status bar
   foreground colour, so it adapts to light and dark themes automatically — do
   not add separate light/dark image assets for the status bar.
-- The font is a third-party asset from the codex-stats project (MIT). If you
-  replace it, keep the glyph mapped to U+E900 (or update `fontCharacter`) and
-  keep the attribution in `icons/NOTICE.md`.
+- The font is self-generated from the Codex logo. If you replace or regenerate
+  it, keep the glyph mapped to U+E900 (or update `fontCharacter` to match).
 - Other in-menu icons use built-in Codicons in `$(name)` syntax (e.g. `$(pulse)`
   / `$(calendar)` to distinguish 5h vs weekly windows in the quick pick).
 

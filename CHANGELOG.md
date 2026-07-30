@@ -22,6 +22,8 @@
   `icons/codex-icon.woff`) in both compact and non-compact views. As a
   monochrome glyph it inherits the status bar colour, so it adapts to light and
   dark themes automatically.
+- Add the `codexUsage.statusBarAlignment` setting to place the usage item on
+  the left or right side of the status bar.
 - Show the active source (Live API vs rollout file) in the tooltip and
   `More information` view.
 

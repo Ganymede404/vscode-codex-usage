@@ -85,6 +85,7 @@ notes why in the tooltip.
 | --- | --- | --- |
 | `codexUsage.source` | `auto` | Data source: `auto`, `api` (online), or `rollout` (offline). |
 | `codexUsage.compactStatusBar` | `false` | Show a compact percent chip instead of the full breakdown. |
+| `codexUsage.statusBarAlignment` | `left` | Which side of the status bar the usage item appears on (`left` or `right`). |
 | `codexUsage.codexHome` | `~/.codex` | Codex home directory. |
 | `codexUsage.refreshIntervalSeconds` | `60` | How often to refresh usage, in seconds. |
 | `codexUsage.lookbackDays` | `7` | Number of days to scan for rollout files. |

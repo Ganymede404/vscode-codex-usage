@@ -71,6 +71,16 @@
           "default": false,
           "description": "Show a compact status bar chip (icon + single percent) instead of the full per-window breakdown."
         },
+        "codexUsage.statusBarAlignment": {
+          "type": "string",
+          "enum": ["left", "right"],
+          "enumDescriptions": [
+            "Show the usage item on the left side of the status bar.",
+            "Show the usage item on the right side of the status bar."
+          ],
+          "default": "left",
+          "description": "Which side of the status bar the Codex usage item appears on."
+        },
         "codexUsage.codexHome": {
           "type": "string",
           "default": "",

@@ -7,6 +7,7 @@ import {
   createUsageSummaryItems,
   isMoreInformationItem,
   StatusBar,
+  StatusBarSide,
 } from "./statusBar";
 import { Snapshot } from "./types";
 
@@ -20,12 +21,14 @@ let lastNote: string | undefined;
 function getConfig() {
   const c = vscode.workspace.getConfiguration("codexUsage");
   const source = c.get<string>("source", "auto");
+  const side = c.get<string>("statusBarAlignment", "left");
   return {
     codexHome: c.get<string>("codexHome", ""),
     refreshIntervalSeconds: c.get<number>("refreshIntervalSeconds", 60),
     lookbackDays: c.get<number>("lookbackDays", 7),
     source: (["auto", "api", "rollout"].includes(source) ? source : "auto") as UsageSource,
     compact: c.get<boolean>("compactStatusBar", false),
+    statusBarAlignment: (side === "right" ? "right" : "left") as StatusBarSide,
   };
 }
 
@@ -63,6 +66,7 @@ async function resolveSnapshot(
 async function refresh() {
   if (!statusBar) return;
   const cfg = getConfig();
+  statusBar.ensureAlignment(cfg.statusBarAlignment);
   try {
     const result = await resolveSnapshot(cfg);
     lastSnapshot = result.snapshot;
@@ -114,7 +118,7 @@ async function showMoreInformation() {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-  statusBar = new StatusBar();
+  statusBar = new StatusBar(getConfig().statusBarAlignment);
   context.subscriptions.push(statusBar);
 
   context.subscriptions.push(

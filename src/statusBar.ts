@@ -54,12 +54,36 @@ const USAGE_COLOR_DEFAULT = "#0078d4";
 const USAGE_COLOR_WARNING = "#cca700";
 const USAGE_COLOR_ERROR = "#f14c4c";
 
+export type StatusBarSide = "left" | "right";
+
+const STATUS_BAR_PRIORITY = 100;
+
 export class StatusBar {
   private item: vscode.StatusBarItem;
+  private side: StatusBarSide;
 
-  constructor() {
-    this.item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-    this.item.command = "codexUsage.showUsage";
+  constructor(side: StatusBarSide = "left") {
+    this.side = side;
+    this.item = this.createItem(side);
+  }
+
+  private createItem(side: StatusBarSide): vscode.StatusBarItem {
+    const alignment =
+      side === "right" ? vscode.StatusBarAlignment.Right : vscode.StatusBarAlignment.Left;
+    const item = vscode.window.createStatusBarItem(alignment, STATUS_BAR_PRIORITY);
+    item.command = "codexUsage.showUsage";
+    return item;
+  }
+
+  // A StatusBarItem's alignment is fixed when it's created, so switching sides
+  // means disposing the old item and creating a fresh one. Returns true when the
+  // item was recreated so the caller can re-render into it.
+  ensureAlignment(side: StatusBarSide): boolean {
+    if (side === this.side) return false;
+    this.item.dispose();
+    this.side = side;
+    this.item = this.createItem(side);
+    return true;
   }
 
   dispose() {
