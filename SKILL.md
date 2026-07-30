@@ -28,7 +28,7 @@ selected via `codexUsage.source`.
 - `src/format.ts`: percent, duration, and reset-time helpers.
 - `src/types.ts`: `RateLimitWindow`, `RateLimits`, `Snapshot`, `SnapshotSource`.
 - `icons/codex-icon.woff`: contributed Codex-logo icon font (glyph U+E900) used as
-  the status bar `$(codex)` icon, from the codex-stats project (MIT; see
+  the status bar `$(codex-logo)` icon, from the codex-stats project (MIT; see
   `icons/NOTICE.md`).
 - `package.json`: VS Code extension manifest, `contributes.icons`, npm scripts.
 
@@ -45,7 +45,7 @@ selected via `codexUsage.source`.
   unless the user explicitly asks for custom HTML.
 - Extra metadata belongs behind `More information`: captured time, source file,
   and rate-limit window lengths.
-- The leading status bar icon is the contributed Codex logo `$(codex)`, backed
+- The leading status bar icon is the contributed Codex logo `$(codex-logo)`, backed
   by `icons/codex-icon.woff` (glyph U+E900) declared under `contributes.icons` in
   `package.json`. As a font glyph it is monochrome and inherits the status bar
   foreground colour, so it adapts to light and dark themes automatically — do

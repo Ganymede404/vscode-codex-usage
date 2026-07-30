@@ -69,7 +69,7 @@ export class StatusBar {
   update(snapshot: Snapshot | null, options: StatusBarOptions = {}) {
     const compact = options.compact ?? false;
     if (!snapshot) {
-      this.item.text = compact ? "$(codex) —" : "$(codex) Codex —";
+      this.item.text = compact ? "$(codex-logo) —" : "$(codex-logo) Codex —";
       this.item.tooltip = "No Codex usage data. Start a Codex session or run 'codex login'.";
       this.item.backgroundColor = undefined;
       this.item.show();
@@ -78,12 +78,12 @@ export class StatusBar {
 
     const windows = collectWindows(snapshot);
     if (windows.length === 0) {
-      this.item.text = compact ? "$(codex) —" : "$(codex) Codex —";
+      this.item.text = compact ? "$(codex-logo) —" : "$(codex-logo) Codex —";
     } else if (compact) {
       this.item.text = formatCompactText(windows);
     } else {
       const segments = windows.map((w) => formatStatusSegment(w.shortLabel, w.window, snapshot));
-      this.item.text = `$(codex) Codex ${segments.join(" | ")}`;
+      this.item.text = `$(codex-logo) Codex ${segments.join(" | ")}`;
     }
     this.item.tooltip = renderUsageTooltip(snapshot, windows, options.note);
 
@@ -237,7 +237,7 @@ function formatCompactText(windows: LabeledWindow[]): string {
   const top = windows.reduce((a, b) =>
     (b.window.used_percent ?? 0) > (a.window.used_percent ?? 0) ? b : a,
   );
-  return `$(codex) ${formatPercent(clampPercent(top.window.used_percent))}`;
+  return `$(codex-logo) ${formatPercent(clampPercent(top.window.used_percent))}`;
 }
 
 function appendUsageWindow(

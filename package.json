@@ -26,7 +26,7 @@
   ],
   "contributes": {
     "icons": {
-      "codex": {
+      "codex-logo": {
         "description": "Codex logo",
         "default": {
           "fontPath": "./icons/codex-icon.woff",
