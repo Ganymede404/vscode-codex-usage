@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.2.0
+
+- Add an **online mode** that queries the live Codex usage endpoint
+  (`chatgpt.com/backend-api/wham/usage`) with the credential already stored in
+  `~/.codex/auth.json`, instead of reading local rollout files. The access
+  token and ChatGPT account id are read from the logged-in session; nothing is
+  refreshed or written back.
+- Add the `codexUsage.source` setting to choose the data source:
+  - `auto` (default) — query the API when logged in, otherwise use rollout
+    files.
+  - `api` — always query the API.
+  - `rollout` — always read local rollout files (offline, previous behaviour).
+  Online modes fall back to the latest rollout snapshot whenever the live query
+  can't run (not logged in, expired token, offline), and the reason is shown in
+  the tooltip and `More information` view.
+- Add the `codexUsage.compactStatusBar` setting for a compact status bar chip
+  (icon + single highest-used percent) as an alternative to the full
+  per-window breakdown.
+- Use the Codex logo as the status bar icon (contributed icon font,
+  `icons/codex-icon.woff`) in both compact and non-compact views. As a
+  monochrome glyph it inherits the status bar colour, so it adapts to light and
+  dark themes automatically.
+- Add the `codexUsage.statusBarAlignment` setting to place the usage item on
+  the left or right side of the status bar.
+- Show the active source (Live API vs rollout file) in the tooltip and
+  `More information` view.
+
 ## 0.1.2
 
 - Read the newest `rate_limits` fields Codex reports: a per-account

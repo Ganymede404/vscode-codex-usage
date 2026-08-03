@@ -114,6 +114,7 @@ export async function readLatestSnapshot(opts: ReaderOptions = {}): Promise<Snap
         rateLimits: rl,
         sourceFile: f.fullPath,
         capturedAt: new Date(f.mtimeMs),
+        source: "rollout",
       };
     }
   }

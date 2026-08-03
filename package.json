@@ -2,7 +2,7 @@
   "name": "vscode-codex-usage",
   "displayName": "Codex Usage",
   "description": "Show Codex CLI usage in the VS Code status bar.",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "publisher": "ganymede404",
   "icon": "images/icon.png",
   "galleryBanner": {
@@ -25,6 +25,15 @@
     "onStartupFinished"
   ],
   "contributes": {
+    "icons": {
+      "codex-logo": {
+        "description": "Codex logo",
+        "default": {
+          "fontPath": "./icons/codex-icon.woff",
+          "fontCharacter": "\\E900"
+        }
+      }
+    },
     "commands": [
       {
         "command": "codexUsage.refresh",
@@ -46,6 +55,32 @@
     "configuration": {
       "title": "Codex Usage",
       "properties": {
+        "codexUsage.source": {
+          "type": "string",
+          "enum": ["auto", "api", "rollout"],
+          "enumDescriptions": [
+            "Query the Codex API when logged in, otherwise read local rollout files.",
+            "Always query the Codex API using the logged-in credential (falls back to rollout files if the query fails).",
+            "Always read local rollout files (offline)."
+          ],
+          "default": "auto",
+          "description": "Where usage data comes from: live Codex API (online) or local rollout files (offline)."
+        },
+        "codexUsage.compactStatusBar": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show a compact status bar chip (icon + single percent) instead of the full per-window breakdown."
+        },
+        "codexUsage.statusBarAlignment": {
+          "type": "string",
+          "enum": ["left", "right"],
+          "enumDescriptions": [
+            "Show the usage item on the left side of the status bar.",
+            "Show the usage item on the right side of the status bar."
+          ],
+          "default": "left",
+          "description": "Which side of the status bar the Codex usage item appears on."
+        },
         "codexUsage.codexHome": {
           "type": "string",
           "default": "",

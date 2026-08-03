@@ -1,7 +1,6 @@
 import { RateLimitWindow } from "./types";
 
 export function formatPercent(p: number): string {
-  if (p < 10) return `${p.toFixed(1)}%`;
   return `${Math.round(p)}%`;
 }
 

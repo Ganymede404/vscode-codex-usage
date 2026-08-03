@@ -9,3 +9,4 @@ tsconfig.json
 PLAN.md
 SKILL.md
 node_modules/**
+icons/*.svg
