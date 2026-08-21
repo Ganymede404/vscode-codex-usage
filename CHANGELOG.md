@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.1
+
+- Fix the **live API** source (`codexUsage.source: "api"`/`auto`) dropping
+  spend-control data: the `chatgpt.com/backend-api/wham/usage` response nests
+  `individual_limit` and `reached` inside a top-level `spend_control` object
+  (a sibling of `rate_limit`, not a child of it), and `rate_limit_reached_type`
+  is an object (`{ "type": "..." }`) rather than a plain string. The extension
+  was only looking inside the `rate_limit` container and expecting a string,
+  so the "Spend limit" row and "Spend control reached" warning in
+  `More information` never appeared for API-sourced snapshots even when the
+  account had hit them. Rollout-file snapshots were unaffected.
+
 ## 0.2.0
 
 - Add an **online mode** that queries the live Codex usage endpoint
