@@ -20,7 +20,7 @@ live Codex usage endpoint using the credential you are already logged in with.
 The status bar displays a summary of each window (usage percent and time to
 reset):
 
-![Full Codex usage status bar](images/codex_usage_non_compact.png)
+![Full Codex usage status bar](images/codex_usage_full.png)
 
 or, in compact mode, just the Codex logo and a single percent:
 

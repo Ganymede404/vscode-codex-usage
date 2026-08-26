@@ -11,6 +11,8 @@
   so the "Spend limit" row and "Spend control reached" warning in
   `More information` never appeared for API-sourced snapshots even when the
   account had hit them. Rollout-file snapshots were unaffected.
+- Update README with screenshots for the full and compact status bar views
+  and added screenshots for the "More information" view.
 
 ## 0.2.0
 
