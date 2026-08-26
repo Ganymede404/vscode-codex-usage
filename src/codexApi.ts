@@ -182,11 +182,23 @@ function normalizeIndividualLimit(raw: any): SpendControlLimitSnapshot | null {
   const limit = firstString(raw.limit, raw.limit_display);
   const used = firstString(raw.used, raw.used_display);
   const remaining = firstNumber(raw.remaining_percent, raw.remainingPercent);
-  const resetsAt = firstNumber(raw.resets_at, raw.resetsAt);
+  const resetsAt = firstNumber(raw.resets_at, raw.resetsAt, raw.reset_at, raw.resetAt);
   if (limit === null || used === null || remaining === undefined || resetsAt === undefined) {
     return null;
   }
   return { limit, used, remaining_percent: remaining, resets_at: resetsAt };
+}
+
+// `rate_limit_reached_type` comes back as an object (`{ "type": "..." }`) from
+// the live usage endpoint, but as a plain string from the rollout-derived
+// shape. Accept both.
+function normalizeRateLimitReachedType(raw: unknown): string | null {
+  if (typeof raw === "string" && raw.length > 0) return raw;
+  if (raw && typeof raw === "object") {
+    const obj = raw as Record<string, unknown>;
+    return firstString(obj.type, obj.kind);
+  }
+  return null;
 }
 
 function normalizeRateLimits(json: any): RateLimits | null {
@@ -208,8 +220,14 @@ function normalizeRateLimits(json: any): RateLimits | null {
     container.secondary ?? container.secondary_window ?? container.secondaryWindow,
   );
   const credits = normalizeCredits(container.credits ?? json?.credits);
+
+  // The live usage endpoint reports spend-control state in a top-level
+  // `spend_control` object (a sibling of `rate_limit`, not nested inside it):
+  // `{ reached, individual_limit }`. Older/alternate shapes may still put
+  // these directly on the rate-limit container, so keep that as a fallback.
+  const spendControl = json?.spend_control ?? container.spend_control ?? null;
   const individualLimit = normalizeIndividualLimit(
-    container.individual_limit ?? container.individualLimit,
+    spendControl?.individual_limit ?? container.individual_limit ?? container.individualLimit,
   );
 
   if (!primary && !secondary && !credits) return null;
@@ -222,6 +240,22 @@ function normalizeRateLimits(json: any): RateLimits | null {
     json?.plan,
   );
 
+  const spendControlReached =
+    typeof spendControl?.reached === "boolean"
+      ? spendControl.reached
+      : typeof container.spend_control_reached === "boolean"
+        ? container.spend_control_reached
+        : null;
+
+  // Likewise, `rate_limit_reached_type` is a top-level sibling of
+  // `rate_limit`, not nested inside it.
+  const rateLimitReachedType = normalizeRateLimitReachedType(
+    json?.rate_limit_reached_type ??
+      json?.rateLimitReachedType ??
+      container.rate_limit_reached_type ??
+      container.rateLimitReachedType,
+  );
+
   return {
     primary,
     secondary,
@@ -230,13 +264,7 @@ function normalizeRateLimits(json: any): RateLimits | null {
     limit_id: firstString(container.limit_id, container.limitId),
     limit_name: firstString(container.limit_name, container.limitName),
     individual_limit: individualLimit,
-    spend_control_reached:
-      typeof container.spend_control_reached === "boolean"
-        ? container.spend_control_reached
-        : null,
-    rate_limit_reached_type: firstString(
-      container.rate_limit_reached_type,
-      container.rateLimitReachedType,
-    ),
+    spend_control_reached: spendControlReached,
+    rate_limit_reached_type: rateLimitReachedType,
   };
 }

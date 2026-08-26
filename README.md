@@ -17,17 +17,14 @@ live Codex usage endpoint using the credential you are already logged in with.
 - Displays plan, credits, and spend-control information when available.
 - Supports current and legacy Codex rollout schemas.
 
-The status bar displays a summary such as:
+The status bar displays a summary of each window (usage percent and time to
+reset):
 
-```text
-Codex 5h 12% · 4h59m | Week 22% · 4d 2h
-```
+![Full Codex usage status bar](images/codex_usage_full.png)
 
 or, in compact mode, just the Codex logo and a single percent:
 
-```text
-⊛ 12%
-```
+![Compact Codex usage status bar](images/codex_usage_compact.png)
 
 
 ## Installation
@@ -98,6 +95,11 @@ notes why in the tooltip.
 | **Codex Usage: Show Usage** | Open the usage summary. |
 | **Codex Usage: Show More Information** | Show snapshot and account details. |
 | **Codex Usage: Open Sessions Folder** | Reveal the Codex sessions directory. |
+
+**Codex Usage: Show More Information** opens a detail view with the snapshot
+source, capture time, rate-limit windows, plan, and credits:
+
+![Codex Usage more information view](images/codex_more_info.png)
 
 ## Development
 
