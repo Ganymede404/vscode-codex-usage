@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.2
+
+- Fix the **live API** source (`codexUsage.source: "api"`/`auto`) silently
+  dropping per-feature rate limits: the `chatgpt.com/backend-api/wham/usage`
+  response can include a top-level `additional_rate_limits` array — separate
+  metered-feature budgets (their own `limit_name`, primary/secondary windows)
+  alongside the main "codex" limit — that the extension didn't parse at all.
+  These now show up as extra rows in `More information`. Rollout-file
+  snapshots don't carry this data (the CLI only ever records the single main
+  snapshot to disk), so they're unaffected.
+
 ## 0.2.1
 
 - Fix the **live API** source (`codexUsage.source: "api"`/`auto`) dropping

@@ -23,6 +23,16 @@ export interface SpendControlLimitSnapshot {
   resets_at: number;
 }
 
+// A per-feature rate limit reported alongside the main "codex" one (e.g. a
+// metered feature with its own 5h/weekly budget). Only sent by the live API;
+// rollout files only ever carry the single main snapshot.
+export interface AdditionalRateLimitSnapshot {
+  limit_name: string;
+  metered_feature: string;
+  primary?: RateLimitWindow | null;
+  secondary?: RateLimitWindow | null;
+}
+
 export interface RateLimits {
   primary?: RateLimitWindow | null;
   secondary?: RateLimitWindow | null;
@@ -34,6 +44,7 @@ export interface RateLimits {
   spend_control_reached?: boolean | null;
   // e.g. "rate_limit_reached", "workspace_owner_credits_depleted", ...
   rate_limit_reached_type?: string | null;
+  additional_limits?: AdditionalRateLimitSnapshot[] | null;
 }
 
 // Where a snapshot came from: the local rollout JSONL files (offline) or a

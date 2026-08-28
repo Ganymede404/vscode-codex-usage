@@ -1,5 +1,11 @@
 import * as vscode from "vscode";
-import { Snapshot, RateLimitWindow, CreditsSnapshot, SpendControlLimitSnapshot } from "./types";
+import {
+  Snapshot,
+  RateLimitWindow,
+  CreditsSnapshot,
+  SpendControlLimitSnapshot,
+  AdditionalRateLimitSnapshot,
+} from "./types";
 
 export interface StatusBarOptions {
   // Render a minimal chip (icon + single percent) instead of the full breakdown.
@@ -198,7 +204,31 @@ export function createMoreInformationItems(
     });
   }
 
+  for (const limit of snapshot.rateLimits.additional_limits ?? []) {
+    const detail = formatAdditionalLimit(limit, snapshot.capturedAt);
+    if (detail) {
+      items.push({ label: `$(pulse) ${limit.limit_name}`, detail });
+    }
+  }
+
   return items;
+}
+
+// Renders a per-feature limit (e.g. from `additional_rate_limits`) as a single
+// line combining its primary/secondary windows, matching the compact style of
+// `formatStatusSegment` since these don't get their own status bar segment.
+function formatAdditionalLimit(limit: AdditionalRateLimitSnapshot, capturedAt: Date): string | null {
+  const parts: string[] = [];
+  for (const [slot, window] of [
+    ["primary", limit.primary] as const,
+    ["secondary", limit.secondary] as const,
+  ]) {
+    if (!window) continue;
+    const reset = getResetDisplay(window, capturedAt);
+    const resetDuration = reset ? formatDuration(reset.secondsRemaining) : "unknown";
+    parts.push(`${windowShortLabel(window, slot)} ${formatPercent(window.used_percent)} · ${resetDuration}`);
+  }
+  return parts.length > 0 ? parts.join(" / ") : null;
 }
 
 function formatCredits(credits: CreditsSnapshot | null): string | null {

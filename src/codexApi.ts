@@ -1,6 +1,7 @@
 import * as https from "https";
 import { readCodexAuth } from "./codexAuth";
 import {
+  AdditionalRateLimitSnapshot,
   CreditsSnapshot,
   RateLimits,
   RateLimitWindow,
@@ -189,6 +190,32 @@ function normalizeIndividualLimit(raw: any): SpendControlLimitSnapshot | null {
   return { limit, used, remaining_percent: remaining, resets_at: resetsAt };
 }
 
+// Some plans report additional, per-feature rate limits alongside the main
+// "codex" one (a top-level `additional_rate_limits` array, each entry shaped
+// like `{ limit_name, metered_feature, rate_limit: { primary_window,
+// secondary_window } }`). Only the live usage endpoint sends these; rollout
+// files only ever carry the single main snapshot.
+function normalizeAdditionalRateLimits(raw: unknown): AdditionalRateLimitSnapshot[] | null {
+  if (!Array.isArray(raw)) return null;
+  const out: AdditionalRateLimitSnapshot[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue;
+    const limitName = firstString(entry.limit_name, entry.limitName);
+    const meteredFeature = firstString(entry.metered_feature, entry.meteredFeature);
+    if (limitName === null || meteredFeature === null) continue;
+    const rateLimit = entry.rate_limit ?? entry.rateLimit ?? entry;
+    const primary = normalizeWindow(
+      rateLimit?.primary ?? rateLimit?.primary_window ?? rateLimit?.primaryWindow,
+    );
+    const secondary = normalizeWindow(
+      rateLimit?.secondary ?? rateLimit?.secondary_window ?? rateLimit?.secondaryWindow,
+    );
+    if (!primary && !secondary) continue;
+    out.push({ limit_name: limitName, metered_feature: meteredFeature, primary, secondary });
+  }
+  return out.length > 0 ? out : null;
+}
+
 // `rate_limit_reached_type` comes back as an object (`{ "type": "..." }`) from
 // the live usage endpoint, but as a plain string from the rollout-derived
 // shape. Accept both.
@@ -256,6 +283,10 @@ function normalizeRateLimits(json: any): RateLimits | null {
       container.rateLimitReachedType,
   );
 
+  const additionalLimits = normalizeAdditionalRateLimits(
+    json?.additional_rate_limits ?? json?.additionalRateLimits,
+  );
+
   return {
     primary,
     secondary,
@@ -266,5 +297,6 @@ function normalizeRateLimits(json: any): RateLimits | null {
     individual_limit: individualLimit,
     spend_control_reached: spendControlReached,
     rate_limit_reached_type: rateLimitReachedType,
+    additional_limits: additionalLimits,
   };
 }
