@@ -12,6 +12,15 @@ export interface CreditsSnapshot {
   has_credits: boolean;
   unlimited: boolean;
   balance?: string | null;
+  // Live API only: the account has hit its overage (pay-as-you-go) ceiling.
+  overage_limit_reached?: boolean | null;
+}
+
+// Live API only: credits that can be spent to reset a rate-limit window early.
+// `applicable_available_count` is how many apply to the current windows.
+export interface RateLimitResetCredits {
+  available_count: number;
+  applicable_available_count?: number | null;
 }
 
 // A separate spend-control limit some plans report alongside the primary/
@@ -45,6 +54,9 @@ export interface RateLimits {
   // e.g. "rate_limit_reached", "workspace_owner_credits_depleted", ...
   rate_limit_reached_type?: string | null;
   additional_limits?: AdditionalRateLimitSnapshot[] | null;
+  // Live API only: the main rate limit is currently exhausted.
+  limit_reached?: boolean | null;
+  rate_limit_reset_credits?: RateLimitResetCredits | null;
 }
 
 // Where a snapshot came from: the local rollout JSONL files (offline) or a

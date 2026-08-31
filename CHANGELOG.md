@@ -2,14 +2,23 @@
 
 ## 0.2.2
 
-- Fix the **live API** source (`codexUsage.source: "api"`/`auto`) silently
-  dropping per-feature rate limits: the `chatgpt.com/backend-api/wham/usage`
-  response can include a top-level `additional_rate_limits` array — separate
-  metered-feature budgets (their own `limit_name`, primary/secondary windows)
-  alongside the main "codex" limit — that the extension didn't parse at all.
-  These now show up as extra rows in `More information`. Rollout-file
-  snapshots don't carry this data (the CLI only ever records the single main
-  snapshot to disk), so they're unaffected.
+Decode the live-API usage fields the extension was silently dropping. The
+`chatgpt.com/backend-api/wham/usage` response carries several fields the
+extension never parsed; all of them now appear in `More information`:
+
+- `additional_rate_limits` — separate metered-feature budgets (their own
+  `limit_name`, primary/secondary windows) reported alongside the main "codex"
+  limit, each now listed as its own row.
+- `code_review_rate_limit` — the dedicated code-review limit, listed the same
+  way under "Code review".
+- `rate_limit_reset_credits` — credits that buy an early reset of a window,
+  shown as "Limit reset credits" with how many apply to the current windows.
+- `credits.overage_limit_reached` — noted on the "Credits" row.
+- `rate_limit.limit_reached` — shown as a "Rate limit reached" warning
+  (previously only the spend-control equivalent was surfaced).
+
+These are all live-API-only: rollout files only ever record the single main
+snapshot, so the offline source is unaffected (and its schema is unchanged).
 
 ## 0.2.1
 

@@ -5,6 +5,7 @@ import {
   CreditsSnapshot,
   SpendControlLimitSnapshot,
   AdditionalRateLimitSnapshot,
+  RateLimitResetCredits,
 } from "./types";
 
 export interface StatusBarOptions {
@@ -204,6 +205,21 @@ export function createMoreInformationItems(
     });
   }
 
+  if (snapshot.rateLimits.limit_reached) {
+    items.push({
+      label: "$(warning) Rate limit reached",
+      detail: formatRateLimitReachedType(snapshot.rateLimits.rate_limit_reached_type ?? null),
+    });
+  }
+
+  const resetCredits = formatResetCredits(snapshot.rateLimits.rate_limit_reset_credits ?? null);
+  if (resetCredits) {
+    items.push({
+      label: "$(history) Limit reset credits",
+      detail: resetCredits,
+    });
+  }
+
   for (const limit of snapshot.rateLimits.additional_limits ?? []) {
     const detail = formatAdditionalLimit(limit, snapshot.capturedAt);
     if (detail) {
@@ -233,14 +249,23 @@ function formatAdditionalLimit(limit: AdditionalRateLimitSnapshot, capturedAt: D
 
 function formatCredits(credits: CreditsSnapshot | null): string | null {
   if (!credits) return null;
-  if (credits.unlimited) return "Unlimited";
-  if (!credits.has_credits) return "No credits";
-  return credits.balance ? `Balance: ${credits.balance}` : "Available";
+  const overage = credits.overage_limit_reached ? " — overage limit reached" : "";
+  if (credits.unlimited) return `Unlimited${overage}`;
+  if (!credits.has_credits) return `No credits${overage}`;
+  return `${credits.balance ? `Balance: ${credits.balance}` : "Available"}${overage}`;
 }
 
 function formatIndividualLimit(limit: SpendControlLimitSnapshot | null): string | null {
   if (!limit) return null;
   return `${limit.used} / ${limit.limit} (${limit.remaining_percent}% remaining)`;
+}
+
+function formatResetCredits(credits: RateLimitResetCredits | null): string | null {
+  if (!credits || credits.available_count <= 0) return null;
+  const applicable = credits.applicable_available_count;
+  const suffix =
+    typeof applicable === "number" ? ` (${applicable} applicable to the current windows)` : "";
+  return `${credits.available_count} available${suffix}`;
 }
 
 function formatRateLimitReachedType(type: string | null): string {

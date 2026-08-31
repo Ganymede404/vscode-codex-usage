@@ -3,6 +3,7 @@ import { readCodexAuth } from "./codexAuth";
 import {
   AdditionalRateLimitSnapshot,
   CreditsSnapshot,
+  RateLimitResetCredits,
   RateLimits,
   RateLimitWindow,
   Snapshot,
@@ -171,10 +172,30 @@ function normalizeCredits(raw: any): CreditsSnapshot | null {
   if (hasCredits === undefined && unlimited === undefined && balance === null) {
     return null;
   }
+  const overageLimitReached =
+    typeof raw.overage_limit_reached === "boolean"
+      ? raw.overage_limit_reached
+      : typeof raw.overageLimitReached === "boolean"
+        ? raw.overageLimitReached
+        : null;
   return {
     has_credits: hasCredits ?? balance !== null,
     unlimited: unlimited ?? false,
     balance,
+    overage_limit_reached: overageLimitReached,
+  };
+}
+
+// Credits that buy an early reset of a rate-limit window. The endpoint reports
+// both how many the account holds and how many apply to the current windows.
+function normalizeResetCredits(raw: any): RateLimitResetCredits | null {
+  if (!raw || typeof raw !== "object") return null;
+  const available = firstNumber(raw.available_count, raw.availableCount);
+  if (available === undefined) return null;
+  const applicable = firstNumber(raw.applicable_available_count, raw.applicableAvailableCount);
+  return {
+    available_count: available,
+    applicable_available_count: applicable ?? null,
   };
 }
 
@@ -195,25 +216,33 @@ function normalizeIndividualLimit(raw: any): SpendControlLimitSnapshot | null {
 // like `{ limit_name, metered_feature, rate_limit: { primary_window,
 // secondary_window } }`). Only the live usage endpoint sends these; rollout
 // files only ever carry the single main snapshot.
-function normalizeAdditionalRateLimits(raw: unknown): AdditionalRateLimitSnapshot[] | null {
-  if (!Array.isArray(raw)) return null;
+function normalizeAdditionalRateLimits(raw: unknown): AdditionalRateLimitSnapshot[] {
+  if (!Array.isArray(raw)) return [];
   const out: AdditionalRateLimitSnapshot[] = [];
   for (const entry of raw) {
     if (!entry || typeof entry !== "object") continue;
     const limitName = firstString(entry.limit_name, entry.limitName);
     const meteredFeature = firstString(entry.metered_feature, entry.meteredFeature);
     if (limitName === null || meteredFeature === null) continue;
-    const rateLimit = entry.rate_limit ?? entry.rateLimit ?? entry;
-    const primary = normalizeWindow(
-      rateLimit?.primary ?? rateLimit?.primary_window ?? rateLimit?.primaryWindow,
-    );
-    const secondary = normalizeWindow(
-      rateLimit?.secondary ?? rateLimit?.secondary_window ?? rateLimit?.secondaryWindow,
-    );
-    if (!primary && !secondary) continue;
-    out.push({ limit_name: limitName, metered_feature: meteredFeature, primary, secondary });
+    const limit = normalizeNamedRateLimit(entry.rate_limit ?? entry.rateLimit ?? entry, limitName, meteredFeature);
+    if (limit) out.push(limit);
   }
-  return out.length > 0 ? out : null;
+  return out;
+}
+
+// Builds one named per-feature limit from a rate-limit container. Accepts both
+// the `{ primary_window, secondary_window }` container the endpoint uses and a
+// bare window object, so an unexpected shape is skipped rather than mis-read.
+function normalizeNamedRateLimit(
+  raw: any,
+  limitName: string,
+  meteredFeature: string,
+): AdditionalRateLimitSnapshot | null {
+  if (!raw || typeof raw !== "object") return null;
+  const primary = normalizeWindow(raw.primary ?? raw.primary_window ?? raw.primaryWindow ?? raw);
+  const secondary = normalizeWindow(raw.secondary ?? raw.secondary_window ?? raw.secondaryWindow);
+  if (!primary && !secondary) return null;
+  return { limit_name: limitName, metered_feature: meteredFeature, primary, secondary };
 }
 
 // `rate_limit_reached_type` comes back as an object (`{ "type": "..." }`) from
@@ -283,9 +312,18 @@ function normalizeRateLimits(json: any): RateLimits | null {
       container.rateLimitReachedType,
   );
 
+  // `code_review_rate_limit` is a dedicated sibling of `rate_limit` for the
+  // code-review feature. It carries no name of its own, so label it here and
+  // list it alongside the `additional_rate_limits` entries.
   const additionalLimits = normalizeAdditionalRateLimits(
     json?.additional_rate_limits ?? json?.additionalRateLimits,
   );
+  const codeReviewLimit = normalizeNamedRateLimit(
+    json?.code_review_rate_limit ?? json?.codeReviewRateLimit,
+    "Code review",
+    "code_review",
+  );
+  if (codeReviewLimit) additionalLimits.push(codeReviewLimit);
 
   return {
     primary,
@@ -297,6 +335,10 @@ function normalizeRateLimits(json: any): RateLimits | null {
     individual_limit: individualLimit,
     spend_control_reached: spendControlReached,
     rate_limit_reached_type: rateLimitReachedType,
-    additional_limits: additionalLimits,
+    additional_limits: additionalLimits.length > 0 ? additionalLimits : null,
+    limit_reached: typeof container.limit_reached === "boolean" ? container.limit_reached : null,
+    rate_limit_reset_credits: normalizeResetCredits(
+      json?.rate_limit_reset_credits ?? json?.rateLimitResetCredits,
+    ),
   };
 }
