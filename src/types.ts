@@ -23,6 +23,17 @@ export interface SpendControlLimitSnapshot {
   resets_at: number;
 }
 
+// A separately metered quota Codex reports alongside the main `primary`/
+// `secondary` windows (e.g. a per-model quota such as an "auto" or "spend"
+// pool). Only present on live API snapshots — rollout files only ever log
+// the account's main rate-limit windows.
+export interface AdditionalRateLimit {
+  limit_name: string;
+  metered_feature: string;
+  primary?: RateLimitWindow | null;
+  secondary?: RateLimitWindow | null;
+}
+
 export interface RateLimits {
   primary?: RateLimitWindow | null;
   secondary?: RateLimitWindow | null;
@@ -34,6 +45,7 @@ export interface RateLimits {
   spend_control_reached?: boolean | null;
   // e.g. "rate_limit_reached", "workspace_owner_credits_depleted", ...
   rate_limit_reached_type?: string | null;
+  additional_limits?: AdditionalRateLimit[] | null;
 }
 
 // Where a snapshot came from: the local rollout JSONL files (offline) or a

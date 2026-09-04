@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.2
+
+- Read `additional_rate_limits` from the **live API** source
+  (`chatgpt.com/backend-api/wham/usage`): Codex can now report separately
+  metered quotas alongside the main account rate limit (e.g. a per-model
+  quota), each with its own name and primary/secondary windows. These were
+  previously dropped entirely; they now show up as extra rows in
+  `More information`.
+
 ## 0.2.1
 
 - Fix the **live API** source (`codexUsage.source: "api"`/`auto`) dropping
