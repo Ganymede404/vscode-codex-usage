@@ -1,6 +1,7 @@
 import * as https from "https";
 import { readCodexAuth } from "./codexAuth";
 import {
+  AdditionalRateLimit,
   CreditsSnapshot,
   RateLimits,
   RateLimitWindow,
@@ -177,6 +178,43 @@ function normalizeCredits(raw: any): CreditsSnapshot | null {
   };
 }
 
+// Extracts the `{ primary, secondary }` window pair from a rate-limit
+// container, whatever its window keys are called. Shared by the top-level
+// `rate_limit` container and each entry in `additional_rate_limits`.
+function normalizeWindowPair(container: any): { primary: RateLimitWindow | null; secondary: RateLimitWindow | null } {
+  return {
+    primary: normalizeWindow(container?.primary ?? container?.primary_window ?? container?.primaryWindow),
+    secondary: normalizeWindow(
+      container?.secondary ?? container?.secondary_window ?? container?.secondaryWindow,
+    ),
+  };
+}
+
+// Codex can report separately metered quotas alongside the main account
+// rate limit (e.g. a per-model quota) via `additional_rate_limits` on the
+// live usage endpoint. Each entry names the quota and nests its own
+// primary/secondary windows the same way the main `rate_limit` container does.
+function normalizeAdditionalLimits(raw: unknown): AdditionalRateLimit[] | null {
+  if (!Array.isArray(raw)) return null;
+  const out: AdditionalRateLimit[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue;
+    const limitName = firstString(entry.limit_name, entry.limitName);
+    const meteredFeature = firstString(entry.metered_feature, entry.meteredFeature);
+    if (!limitName) continue;
+    const windowContainer = entry.rate_limit ?? entry.rateLimit ?? entry;
+    const { primary, secondary } = normalizeWindowPair(windowContainer);
+    if (!primary && !secondary) continue;
+    out.push({
+      limit_name: limitName,
+      metered_feature: meteredFeature ?? "",
+      primary,
+      secondary,
+    });
+  }
+  return out.length > 0 ? out : null;
+}
+
 function normalizeIndividualLimit(raw: any): SpendControlLimitSnapshot | null {
   if (!raw || typeof raw !== "object") return null;
   const limit = firstString(raw.limit, raw.limit_display);
@@ -213,13 +251,11 @@ function normalizeRateLimits(json: any): RateLimits | null {
 
   if (!container || typeof container !== "object") return null;
 
-  const primary = normalizeWindow(
-    container.primary ?? container.primary_window ?? container.primaryWindow,
-  );
-  const secondary = normalizeWindow(
-    container.secondary ?? container.secondary_window ?? container.secondaryWindow,
-  );
+  const { primary, secondary } = normalizeWindowPair(container);
   const credits = normalizeCredits(container.credits ?? json?.credits);
+  const additionalLimits = normalizeAdditionalLimits(
+    json?.additional_rate_limits ?? json?.additionalRateLimits,
+  );
 
   // The live usage endpoint reports spend-control state in a top-level
   // `spend_control` object (a sibling of `rate_limit`, not nested inside it):
@@ -266,5 +302,6 @@ function normalizeRateLimits(json: any): RateLimits | null {
     individual_limit: individualLimit,
     spend_control_reached: spendControlReached,
     rate_limit_reached_type: rateLimitReachedType,
+    additional_limits: additionalLimits,
   };
 }

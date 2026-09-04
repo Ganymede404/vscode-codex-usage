@@ -1,5 +1,11 @@
 import * as vscode from "vscode";
-import { Snapshot, RateLimitWindow, CreditsSnapshot, SpendControlLimitSnapshot } from "./types";
+import {
+  Snapshot,
+  RateLimitWindow,
+  CreditsSnapshot,
+  SpendControlLimitSnapshot,
+  AdditionalRateLimit,
+} from "./types";
 
 export interface StatusBarOptions {
   // Render a minimal chip (icon + single percent) instead of the full breakdown.
@@ -198,7 +204,40 @@ export function createMoreInformationItems(
     });
   }
 
+  for (const item of collectAdditionalLimitItems(snapshot)) {
+    items.push(item);
+  }
+
   return items;
+}
+
+// Separately metered quotas Codex reports alongside the main rate limit
+// (e.g. a per-model quota), only present on live API snapshots.
+function collectAdditionalLimitItems(snapshot: Snapshot): vscode.QuickPickItem[] {
+  const items: vscode.QuickPickItem[] = [];
+  for (const limit of snapshot.rateLimits.additional_limits ?? []) {
+    for (const slot of ["primary", "secondary"] as WindowSlot[]) {
+      const window = limit[slot];
+      if (!window) continue;
+      items.push(createAdditionalLimitItem(limit, window, slot, snapshot));
+    }
+  }
+  return items;
+}
+
+function createAdditionalLimitItem(
+  limit: AdditionalRateLimit,
+  window: RateLimitWindow,
+  slot: WindowSlot,
+  snapshot: Snapshot,
+): vscode.QuickPickItem {
+  const shortLabel = windowShortLabel(window, slot);
+  const longLabel = windowLongLabel(window, slot);
+  const pct = clampPercent(window.used_percent);
+  return {
+    label: `${windowIcon(shortLabel)} ${limit.limit_name} — ${longLabel}`,
+    detail: `${formatPercent(pct)} used · Resets ${formatResetDate(window, snapshot)}`,
+  };
 }
 
 function formatCredits(credits: CreditsSnapshot | null): string | null {
