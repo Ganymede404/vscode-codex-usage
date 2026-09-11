@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.2
+
+- Fix **rollout-file** reading (`codexUsage.source: "rollout"`/`auto` fallback)
+  silently losing history: Codex now compresses local rollout files older than
+  about a week in place, renaming `rollout-*.jsonl` to `rollout-*.jsonl.zst`
+  (zstd). The extension only matched the plain `.jsonl` suffix, so once a
+  file was compressed it dropped out of the lookback scan entirely — on a
+  machine that hadn't opened Codex recently this could mean "no data" instead
+  of the last known usage. Rollout discovery now also matches `.jsonl.zst`
+  files and transparently decompresses them on Node/Electron builds new
+  enough to support it (falling back to skipping just that file, as before,
+  on older runtimes).
+
 ## 0.2.1
 
 - Fix the **live API** source (`codexUsage.source: "api"`/`auto`) dropping

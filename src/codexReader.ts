@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 import * as readline from "readline";
+import * as zlib from "zlib";
 import { RateLimits, Snapshot } from "./types";
 
 export interface ReaderOptions {
@@ -41,7 +42,10 @@ function listRolloutFiles(sessionsDir: string, lookbackDays: number): RolloutFil
     }
     for (const e of entries) {
       if (!e.isFile()) continue;
-      if (!e.name.startsWith("rollout-") || !e.name.endsWith(".jsonl")) continue;
+      if (!e.name.startsWith("rollout-")) continue;
+      // Codex compresses rollouts older than a week to `rollout-*.jsonl.zst`
+      // in place; keep matching them so history doesn't silently disappear.
+      if (!e.name.endsWith(".jsonl") && !e.name.endsWith(".jsonl.zst")) continue;
       const fullPath = path.join(dayDir, e.name);
       try {
         const stat = fs.statSync(fullPath);
@@ -84,13 +88,35 @@ function extractRateLimits(line: string): RateLimits | null {
   };
 }
 
+// Node added built-in zstd support (zlib.createZstdDecompress) in 22.15/23.8.
+// Older Electron/VS Code builds don't have it; feature-detect instead of
+// hard-depending on a Node version this extension doesn't otherwise require.
+function createZstdDecompressStream(): NodeJS.ReadWriteStream | null {
+  const zlibAny = zlib as unknown as { createZstdDecompress?: () => NodeJS.ReadWriteStream };
+  if (typeof zlibAny.createZstdDecompress !== "function") return null;
+  try {
+    return zlibAny.createZstdDecompress();
+  } catch {
+    return null;
+  }
+}
+
 async function lastRateLimitsInFile(filePath: string): Promise<RateLimits | null> {
   // Sessions can be long; scan line-by-line and keep the last hit.
   // Cheaper than loading the whole file when files get big.
+  const isCompressed = filePath.endsWith(".zst");
+  let decompressor: NodeJS.ReadWriteStream | null = null;
+  if (isCompressed) {
+    decompressor = createZstdDecompressStream();
+    // Can't decompress on this runtime; skip rather than scan garbage bytes.
+    if (!decompressor) return null;
+  }
+
   return new Promise((resolve, reject) => {
     let latest: RateLimits | null = null;
-    const stream = fs.createReadStream(filePath, { encoding: "utf8" });
-    const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
+    const stream = fs.createReadStream(filePath, isCompressed ? undefined : { encoding: "utf8" });
+    const input = decompressor ? stream.pipe(decompressor) : stream;
+    const rl = readline.createInterface({ input, crlfDelay: Infinity });
     rl.on("line", (line) => {
       const extracted = extractRateLimits(line);
       if (extracted) latest = extracted;
@@ -98,6 +124,7 @@ async function lastRateLimitsInFile(filePath: string): Promise<RateLimits | null
     rl.on("close", () => resolve(latest));
     rl.on("error", reject);
     stream.on("error", reject);
+    decompressor?.on("error", reject);
   });
 }
 
