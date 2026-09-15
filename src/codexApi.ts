@@ -222,8 +222,10 @@ function normalizeAdditionalRateLimits(raw: unknown): AdditionalRateLimitSnapsho
   for (const entry of raw) {
     if (!entry || typeof entry !== "object") continue;
     const limitName = firstString(entry.limit_name, entry.limitName);
-    const meteredFeature = firstString(entry.metered_feature, entry.meteredFeature);
-    if (limitName === null || meteredFeature === null) continue;
+    // A limit with windows but no `metered_feature` is still worth showing, so
+    // only require the name and default the feature label to empty.
+    if (limitName === null) continue;
+    const meteredFeature = firstString(entry.metered_feature, entry.meteredFeature) ?? "";
     const limit = normalizeNamedRateLimit(entry.rate_limit ?? entry.rateLimit ?? entry, limitName, meteredFeature);
     if (limit) out.push(limit);
   }
