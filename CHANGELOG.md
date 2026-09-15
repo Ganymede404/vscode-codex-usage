@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.2.2
+
+- Fix **rollout-file** reading (`codexUsage.source: "rollout"`/`auto` fallback)
+  silently losing history: Codex now compresses local rollout files older than
+  about a week in place, renaming `rollout-*.jsonl` to `rollout-*.jsonl.zst`
+  (zstd). The extension only matched the plain `.jsonl` suffix, so once a
+  file was compressed it dropped out of the lookback scan entirely — on a
+  machine that hadn't opened Codex recently this could mean "no data" instead
+  of the last known usage. Rollout discovery now also matches `.jsonl.zst`
+  files and transparently decompresses them on Node/Electron builds new
+  enough to support it (falling back to skipping just that file, as before,
+  on older runtimes).
+- Decode the **live-API** usage fields the extension was silently dropping. The
+  `chatgpt.com/backend-api/wham/usage` response carries several fields the
+  extension never parsed; all of them now appear in `More information`:
+  - `additional_rate_limits` — separate metered-feature budgets (their own
+    `limit_name`, primary/secondary windows) reported alongside the main "codex"
+    limit, each now listed as its own row.
+  - `code_review_rate_limit` — the dedicated code-review limit, listed the same
+    way under "Code review".
+  - `rate_limit_reset_credits` — credits that buy an early reset of a window,
+    shown as "Limit reset credits" with how many apply to the current windows.
+  - `credits.overage_limit_reached` — noted on the "Credits" row.
+  - `rate_limit.limit_reached` — shown as a "Rate limit reached" warning
+    (previously only the spend-control equivalent was surfaced).
+
+  These are all live-API-only: rollout files only ever record the single main
+  snapshot, so the offline source is unaffected (and its schema is unchanged).
+
 ## 0.2.1
 
 - Fix the **live API** source (`codexUsage.source: "api"`/`auto`) dropping
