@@ -85,6 +85,7 @@ function extractRateLimits(line: string): RateLimits | null {
     spend_control_reached: typeof rl.spend_control_reached === "boolean" ? rl.spend_control_reached : null,
     rate_limit_reached_type:
       typeof rl.rate_limit_reached_type === "string" ? rl.rate_limit_reached_type : null,
+    normal_model_slug: typeof rl.normal_model_slug === "string" ? rl.normal_model_slug : null,
   };
 }
 

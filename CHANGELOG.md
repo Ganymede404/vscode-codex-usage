@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.3
+
+- Decode `normal_model_slug`, a field Codex added to the rollout `token_count`
+  event's `rate_limits` payload (`RateLimitSnapshot` in `codex-rs/protocol`)
+  to support the "Luna Reserve" fallback quota: when ordinary usage is
+  exhausted and the CLI falls back to a reserve budget, this names the model
+  the reserve budget is tied to. The extension didn't parse this field at
+  all, so it was silently dropped; it now shows as "Reserve for" in
+  `More information` when present. Rollout-file snapshots are the primary
+  source (the live `wham/usage` endpoint's checked-in OpenAPI models don't
+  carry this field yet), but the live-API normalizer now probes for it too,
+  consistent with this extension's existing defensive parsing.
+
 ## 0.2.2
 
 - Fix **rollout-file** reading (`codexUsage.source: "rollout"`/`auto` fallback)

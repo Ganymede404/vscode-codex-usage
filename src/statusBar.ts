@@ -182,6 +182,13 @@ export function createMoreInformationItems(
     });
   }
 
+  if (snapshot.rateLimits.normal_model_slug) {
+    items.push({
+      label: "$(sync) Reserve for",
+      detail: snapshot.rateLimits.normal_model_slug,
+    });
+  }
+
   const credits = formatCredits(snapshot.rateLimits.credits ?? null);
   if (credits) {
     items.push({

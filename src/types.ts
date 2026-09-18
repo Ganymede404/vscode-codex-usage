@@ -49,6 +49,10 @@ export interface RateLimits {
   plan_type?: string | null;
   limit_id?: string | null;
   limit_name?: string | null;
+  // Set when this snapshot is a quota alias (e.g. the "Luna Reserve" fallback
+  // budget offered once ordinary usage is exhausted): the model the alias's
+  // budget is tied to, never a replacement for the request model itself.
+  normal_model_slug?: string | null;
   individual_limit?: SpendControlLimitSnapshot | null;
   spend_control_reached?: boolean | null;
   // e.g. "rate_limit_reached", "workspace_owner_credits_depleted", ...
