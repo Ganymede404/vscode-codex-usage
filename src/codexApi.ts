@@ -334,6 +334,12 @@ function normalizeRateLimits(json: any): RateLimits | null {
     plan_type: planType,
     limit_id: firstString(container.limit_id, container.limitId),
     limit_name: firstString(container.limit_name, container.limitName),
+    normal_model_slug: firstString(
+      container.normal_model_slug,
+      container.normalModelSlug,
+      json?.normal_model_slug,
+      json?.normalModelSlug,
+    ),
     individual_limit: individualLimit,
     spend_control_reached: spendControlReached,
     rate_limit_reached_type: rateLimitReachedType,
