@@ -71,6 +71,11 @@
           "default": false,
           "description": "Show a compact status bar chip (icon + single percent) instead of the full per-window breakdown."
         },
+        "codexUsage.showRemaining": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show remaining usage (\"% left\", counting down from 100%) instead of used usage, like the Codex CLI."
+        },
         "codexUsage.statusBarAlignment": {
           "type": "string",
           "enum": ["left", "right"],

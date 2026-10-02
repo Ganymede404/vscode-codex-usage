@@ -9,6 +9,7 @@ import {
   StatusBar,
   StatusBarSide,
 } from "./statusBar";
+import { setShowRemaining } from "./format";
 import { Snapshot } from "./types";
 
 type UsageSource = "auto" | "api" | "rollout";
@@ -28,6 +29,7 @@ function getConfig() {
     lookbackDays: c.get<number>("lookbackDays", 7),
     source: (["auto", "api", "rollout"].includes(source) ? source : "auto") as UsageSource,
     compact: c.get<boolean>("compactStatusBar", false),
+    showRemaining: c.get<boolean>("showRemaining", false),
     statusBarAlignment: (side === "right" ? "right" : "left") as StatusBarSide,
   };
 }
@@ -66,6 +68,7 @@ async function resolveSnapshot(
 async function refresh() {
   if (!statusBar) return;
   const cfg = getConfig();
+  setShowRemaining(cfg.showRemaining);
   statusBar.ensureAlignment(cfg.statusBarAlignment);
   try {
     const result = await resolveSnapshot(cfg);

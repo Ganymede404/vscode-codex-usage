@@ -16,6 +16,7 @@ export interface StatusBarOptions {
 }
 import {
   formatPercent,
+  displayPercent,
   formatDuration,
   getResetDisplay,
   windowLongLabel,
@@ -372,13 +373,14 @@ function formatResetDate(window: RateLimitWindow, snapshot: Snapshot): string {
 
 function formatTextBar(percent: number): string {
   const pct = clampPercent(percent);
-  const filled = pct > 0 ? Math.max(1, Math.round((pct / 100) * TEXT_BAR_WIDTH)) : 0;
+  const shown = displayPercent(pct);
+  const filled = shown > 0 ? Math.max(1, Math.round((shown / 100) * TEXT_BAR_WIDTH)) : 0;
   return `${getUsageIcon(pct)} ${"█".repeat(filled)}${"░".repeat(TEXT_BAR_WIDTH - filled)}`;
 }
 
 function formatSvgBar(percent: number, altText: string): string {
   const pct = clampPercent(percent);
-  const fillWidth = Math.round((pct / 100) * SVG_BAR_WIDTH);
+  const fillWidth = Math.round((displayPercent(pct) / 100) * SVG_BAR_WIDTH);
   const fillColor = getUsageColor(pct);
   const svg = [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${SVG_BAR_WIDTH}" height="${SVG_BAR_HEIGHT}" viewBox="0 0 ${SVG_BAR_WIDTH} ${SVG_BAR_HEIGHT}">`,

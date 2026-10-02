@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add `codexUsage.showRemaining` setting to show remaining usage ("% left", counting down from 100%) like the Codex CLI instead of used usage (#14).
+
 ## 0.2.3
 
 - Decode `normal_model_slug`, a field Codex added to the rollout `token_count`
