@@ -16,6 +16,7 @@ export interface StatusBarOptions {
 }
 import {
   formatPercent,
+  displayPercent,
   formatDuration,
   getResetDisplay,
   windowLongLabel,
@@ -323,7 +324,7 @@ function formatCompactText(windows: LabeledWindow[]): string {
   const top = windows.reduce((a, b) =>
     (b.window.used_percent ?? 0) > (a.window.used_percent ?? 0) ? b : a,
   );
-  return `$(codex-logo) ${formatPercent(clampPercent(top.window.used_percent))}`;
+  return `$(codex-logo) ${formatPercent(clampPercent(top.window.used_percent), false)}`;
 }
 
 function appendUsageWindow(
@@ -334,7 +335,8 @@ function appendUsageWindow(
 ) {
   md.appendMarkdown(`**${label}**\n\n`);
   const pct = clampPercent(window.used_percent);
-  md.appendMarkdown(`${formatSvgBar(pct, `${label} usage ${formatPercent(pct)}`)} ${formatPercent(pct)}\n\n`);
+  md.appendMarkdown(`**${formatPercent(pct)}**\n\n`)
+  md.appendMarkdown(`${formatSvgBar(pct, `${label} usage ${formatPercent(pct)}`)}\n\n`);
   md.appendMarkdown(`Resets ${formatResetDate(window, snapshot)}`);
 }
 
@@ -354,7 +356,7 @@ function createUsageQuickPickItem(
 function formatStatusSegment(label: string, window: RateLimitWindow, snapshot: Snapshot): string {
   const reset = getResetDisplay(window, snapshot.capturedAt);
   const resetDuration = reset ? formatDuration(reset.secondsRemaining) : "unknown";
-  return `${label} ${formatPercent(window.used_percent)} · ${resetDuration}`;
+  return `${label} ${formatPercent(window.used_percent, false)} · ${resetDuration}`;
 }
 
 function formatWindowLength(window: RateLimitWindow | null): string {
@@ -372,13 +374,14 @@ function formatResetDate(window: RateLimitWindow, snapshot: Snapshot): string {
 
 function formatTextBar(percent: number): string {
   const pct = clampPercent(percent);
-  const filled = pct > 0 ? Math.max(1, Math.round((pct / 100) * TEXT_BAR_WIDTH)) : 0;
+  const shown = displayPercent(pct);
+  const filled = shown > 0 ? Math.max(1, Math.round((shown / 100) * TEXT_BAR_WIDTH)) : 0;
   return `${getUsageIcon(pct)} ${"█".repeat(filled)}${"░".repeat(TEXT_BAR_WIDTH - filled)}`;
 }
 
 function formatSvgBar(percent: number, altText: string): string {
   const pct = clampPercent(percent);
-  const fillWidth = Math.round((pct / 100) * SVG_BAR_WIDTH);
+  const fillWidth = Math.round((displayPercent(pct) / 100) * SVG_BAR_WIDTH);
   const fillColor = getUsageColor(pct);
   const svg = [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${SVG_BAR_WIDTH}" height="${SVG_BAR_HEIGHT}" viewBox="0 0 ${SVG_BAR_WIDTH} ${SVG_BAR_HEIGHT}">`,

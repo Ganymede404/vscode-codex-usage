@@ -2,7 +2,7 @@
   "name": "vscode-codex-usage",
   "displayName": "Codex Usage",
   "description": "Show Codex CLI usage in the VS Code status bar.",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "publisher": "ganymede404",
   "icon": "images/icon.png",
   "galleryBanner": {
@@ -70,6 +70,11 @@
           "type": "boolean",
           "default": false,
           "description": "Show a compact status bar chip (icon + single percent) instead of the full per-window breakdown."
+        },
+        "codexUsage.showRemaining": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show remaining usage (\"% left\", counting down from 100%) instead of used usage, like the Codex CLI."
         },
         "codexUsage.statusBarAlignment": {
           "type": "string",

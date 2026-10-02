@@ -1,7 +1,20 @@
 import { RateLimitWindow } from "./types";
 
-export function formatPercent(p: number): string {
-  return `${Math.round(p)}%`;
+let showRemaining = false;
+
+// When enabled, percentages are shown as "left" (100% -> 0%, like the Codex
+// CLI) instead of "used". Colours/warnings always follow the used percent.
+export function setShowRemaining(value: boolean) {
+  showRemaining = value;
+}
+
+export function displayPercent(usedPercent: number): number {
+  return showRemaining ? 100 - usedPercent : usedPercent;
+}
+
+export function formatPercent(usedPercent: number, withDescription: boolean = true): string {
+  const p = Number.isFinite(usedPercent) ? displayPercent(usedPercent) : usedPercent;
+  return `${Math.round(p)}%${withDescription ? (showRemaining ? " remaining" : " used") : ""}`;
 }
 
 export function formatDuration(totalSeconds: number): string {
