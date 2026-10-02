@@ -1,8 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.2.4
 
-- Add `codexUsage.showRemaining` setting to show remaining usage ("% left", counting down from 100%) like the Codex CLI instead of used usage (#14).
+- Add `codexUsage.showRemaining` setting to show remaining usage
+  ("% remaining", counting down from 100% or "% used" counting up from 0%)
+  like the Codex CLI instead of used usage (#14).
 
 ## 0.2.3
 

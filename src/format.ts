@@ -12,9 +12,9 @@ export function displayPercent(usedPercent: number): number {
   return showRemaining ? 100 - usedPercent : usedPercent;
 }
 
-export function formatPercent(usedPercent: number): string {
+export function formatPercent(usedPercent: number, withDescription: boolean = true): string {
   const p = Number.isFinite(usedPercent) ? displayPercent(usedPercent) : usedPercent;
-  return `${Math.round(p)}%${showRemaining ? " left" : ""}`;
+  return `${Math.round(p)}%${withDescription ? (showRemaining ? " remaining" : " used") : ""}`;
 }
 
 export function formatDuration(totalSeconds: number): string {

@@ -324,7 +324,7 @@ function formatCompactText(windows: LabeledWindow[]): string {
   const top = windows.reduce((a, b) =>
     (b.window.used_percent ?? 0) > (a.window.used_percent ?? 0) ? b : a,
   );
-  return `$(codex-logo) ${formatPercent(clampPercent(top.window.used_percent))}`;
+  return `$(codex-logo) ${formatPercent(clampPercent(top.window.used_percent), false)}`;
 }
 
 function appendUsageWindow(
@@ -335,7 +335,8 @@ function appendUsageWindow(
 ) {
   md.appendMarkdown(`**${label}**\n\n`);
   const pct = clampPercent(window.used_percent);
-  md.appendMarkdown(`${formatSvgBar(pct, `${label} usage ${formatPercent(pct)}`)} ${formatPercent(pct)}\n\n`);
+  md.appendMarkdown(`**${formatPercent(pct)}**\n\n`)
+  md.appendMarkdown(`${formatSvgBar(pct, `${label} usage ${formatPercent(pct)}`)}\n\n`);
   md.appendMarkdown(`Resets ${formatResetDate(window, snapshot)}`);
 }
 
@@ -355,7 +356,7 @@ function createUsageQuickPickItem(
 function formatStatusSegment(label: string, window: RateLimitWindow, snapshot: Snapshot): string {
   const reset = getResetDisplay(window, snapshot.capturedAt);
   const resetDuration = reset ? formatDuration(reset.secondsRemaining) : "unknown";
-  return `${label} ${formatPercent(window.used_percent)} · ${resetDuration}`;
+  return `${label} ${formatPercent(window.used_percent, false)} · ${resetDuration}`;
 }
 
 function formatWindowLength(window: RateLimitWindow | null): string {
