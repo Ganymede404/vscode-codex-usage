@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add `codexUsage.usageColors` setting to customize tooltip bar colours and
+  their used-percent thresholds (#16).
+
 ## 0.2.4
 
 - Add `codexUsage.showRemaining` setting to show remaining usage

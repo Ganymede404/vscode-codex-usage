@@ -10,6 +10,7 @@ import {
   StatusBarSide,
 } from "./statusBar";
 import { setShowRemaining } from "./format";
+import { setUsageColors } from "./statusBar";
 import { Snapshot } from "./types";
 
 type UsageSource = "auto" | "api" | "rollout";
@@ -30,6 +31,7 @@ function getConfig() {
     source: (["auto", "api", "rollout"].includes(source) ? source : "auto") as UsageSource,
     compact: c.get<boolean>("compactStatusBar", false),
     showRemaining: c.get<boolean>("showRemaining", false),
+    usageColors: c.get<unknown>("usageColors"),
     statusBarAlignment: (side === "right" ? "right" : "left") as StatusBarSide,
   };
 }
@@ -69,6 +71,7 @@ async function refresh() {
   if (!statusBar) return;
   const cfg = getConfig();
   setShowRemaining(cfg.showRemaining);
+  setUsageColors(cfg.usageColors);
   statusBar.ensureAlignment(cfg.statusBarAlignment);
   try {
     const result = await resolveSnapshot(cfg);

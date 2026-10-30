@@ -398,10 +398,43 @@ function escapeMarkdownAltText(text: string): string {
   return text.replace(/[[\]\\]/g, "\\$&");
 }
 
+export interface UsageColorStep {
+  from: number;
+  color: string;
+}
+
+const DEFAULT_USAGE_COLORS: UsageColorStep[] = [
+  { from: 0, color: USAGE_COLOR_DEFAULT },
+  { from: 75, color: USAGE_COLOR_WARNING },
+  { from: 90, color: USAGE_COLOR_ERROR },
+];
+
+let usageColors = DEFAULT_USAGE_COLORS;
+
+// Colours for the tooltip bars, keyed on the used percent. Invalid entries are
+// dropped; an empty/invalid list restores the defaults.
+export function setUsageColors(steps: unknown) {
+  const valid = Array.isArray(steps)
+    ? steps
+        .filter(
+          (s): s is UsageColorStep =>
+            !!s &&
+            typeof s.from === "number" &&
+            Number.isFinite(s.from) &&
+            typeof s.color === "string" &&
+            /^#[0-9a-fA-F]{3,8}$/.test(s.color),
+        )
+        .sort((a, b) => a.from - b.from)
+    : [];
+  usageColors = valid.length > 0 ? valid : DEFAULT_USAGE_COLORS;
+}
+
 function getUsageColor(percent: number): string {
-  if (percent >= 90) return USAGE_COLOR_ERROR;
-  if (percent >= 75) return USAGE_COLOR_WARNING;
-  return USAGE_COLOR_DEFAULT;
+  let color = usageColors[0].color;
+  for (const step of usageColors) {
+    if (percent >= step.from) color = step.color;
+  }
+  return color;
 }
 
 function getUsageIcon(percent: number): string {
