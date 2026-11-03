@@ -1,9 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.3.0
 
-- Add `codexUsage.usageColors` setting to customize tooltip bar colours and
-  their used-percent thresholds (#16).
+- Add `codexUsage.usageColors` setting to customize the tooltip usage bar
+  colours and the used-percent thresholds at which they change (#16). The
+  defaults match the previous behaviour (blue, yellow from 75%, red from 90%).
+  The status bar background and the Show Usage quick-pick icons keep the
+  fixed 75% / 90% thresholds.
+- Document `codexUsage.showRemaining` and `codexUsage.usageColors` in the
+  README settings table.
 
 ## 0.2.4
 

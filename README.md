@@ -12,6 +12,8 @@ live Codex usage endpoint using the credential you are already logged in with.
 - **Compact or full footer:** show a minimal percent chip or the full
   per-window breakdown.
 - Provides usage bars and exact reset times on hover or click.
+- Optionally shows remaining usage ("% left") instead of usage consumed, and
+  lets you customize the usage bar colours and their thresholds.
 - Adapts to the windows reported by your plan, including 5-hour, daily,
   weekly, and monthly limits.
 - Displays plan, credits, and spend-control information when available.
@@ -82,10 +84,33 @@ notes why in the tooltip.
 | --- | --- | --- |
 | `codexUsage.source` | `auto` | Data source: `auto`, `api` (online), or `rollout` (offline). |
 | `codexUsage.compactStatusBar` | `false` | Show a compact percent chip instead of the full breakdown. |
+| `codexUsage.showRemaining` | `false` | Show remaining usage ("% left", counting down from 100%) instead of used usage, like the Codex CLI. |
+| `codexUsage.usageColors` | blue / yellow ≥ 75% / red ≥ 90% | Tooltip usage bar colours by used percent. See [Usage bar colours](#usage-bar-colours). |
 | `codexUsage.statusBarAlignment` | `left` | Which side of the status bar the usage item appears on (`left` or `right`). |
 | `codexUsage.codexHome` | `~/.codex` | Codex home directory. |
 | `codexUsage.refreshIntervalSeconds` | `60` | How often to refresh usage, in seconds. |
 | `codexUsage.lookbackDays` | `7` | Number of days to scan for rollout files. |
+
+### Usage bar colours
+
+`codexUsage.usageColors` is a list of `{ "from", "color" }` steps. Each step's
+colour applies from its `from` value (percent **used**, 0–100) up to the next
+step; usage below the lowest `from` uses the lowest step's colour. Thresholds
+always use percent used, even when `codexUsage.showRemaining` is on. Colours
+must be hex values (`#rgb`, `#rgba`, `#rrggbb` or `#rrggbbaa`). Invalid entries
+are ignored, and an empty or fully invalid list restores the defaults:
+
+```json
+"codexUsage.usageColors": [
+  { "from": 0, "color": "#0078d4" },
+  { "from": 75, "color": "#cca700" },
+  { "from": 90, "color": "#f14c4c" }
+]
+```
+
+This setting colours the bars in the hover tooltip. The status bar background
+and the icons in **Codex Usage: Show Usage** keep the fixed 75% (warning) and
+90% (error) thresholds.
 
 ## Commands
 
@@ -114,5 +139,5 @@ Press `F5` in VS Code to launch an Extension Development Host.
 
 - Codex `exec` mode may emit `rate_limits: null`. These events are skipped;
   usage remains unavailable until Codex writes a populated event.
-- Usage reflects the latest local rollout snapshot and cannot update more
-  frequently than Codex writes that data.
+- In rollout (offline) mode, usage reflects the latest local rollout snapshot
+  and cannot update more frequently than Codex writes that data.

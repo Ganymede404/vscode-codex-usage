@@ -6,11 +6,11 @@ import {
   createMoreInformationItems,
   createUsageSummaryItems,
   isMoreInformationItem,
+  setUsageColors,
   StatusBar,
   StatusBarSide,
 } from "./statusBar";
 import { setShowRemaining } from "./format";
-import { setUsageColors } from "./statusBar";
 import { Snapshot } from "./types";
 
 type UsageSource = "auto" | "api" | "rollout";

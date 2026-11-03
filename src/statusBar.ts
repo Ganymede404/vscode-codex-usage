@@ -409,6 +409,10 @@ const DEFAULT_USAGE_COLORS: UsageColorStep[] = [
   { from: 90, color: USAGE_COLOR_ERROR },
 ];
 
+// #rgb, #rgba, #rrggbb or #rrggbbaa. Keep in sync with the package.json schema.
+// Also guards the value interpolated into the tooltip SVG's fill attribute.
+const HEX_COLOR = /^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+
 let usageColors = DEFAULT_USAGE_COLORS;
 
 // Colours for the tooltip bars, keyed on the used percent. Invalid entries are
@@ -422,7 +426,7 @@ export function setUsageColors(steps: unknown) {
             typeof s.from === "number" &&
             Number.isFinite(s.from) &&
             typeof s.color === "string" &&
-            /^#[0-9a-fA-F]{3,8}$/.test(s.color),
+            HEX_COLOR.test(s.color),
         )
         .sort((a, b) => a.from - b.from)
     : [];

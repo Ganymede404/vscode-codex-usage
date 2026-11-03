@@ -2,7 +2,7 @@
   "name": "vscode-codex-usage",
   "displayName": "Codex Usage",
   "description": "Show Codex CLI usage in the VS Code status bar.",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "publisher": "ganymede404",
   "icon": "images/icon.png",
   "galleryBanner": {
@@ -82,7 +82,7 @@
             "type": "object",
             "properties": {
               "from": { "type": "number", "minimum": 0, "maximum": 100, "description": "Used percent at which this colour starts." },
-              "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{3,8}$", "description": "Hex colour, e.g. #4caf50." }
+              "color": { "type": "string", "pattern": "^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$", "patternErrorMessage": "Use a hex colour: #rgb, #rgba, #rrggbb or #rrggbbaa.", "description": "Hex colour, e.g. #4caf50." }
             },
             "required": ["from", "color"]
           },
@@ -91,7 +91,7 @@
             { "from": 75, "color": "#cca700" },
             { "from": 90, "color": "#f14c4c" }
           ],
-          "description": "Colours of the tooltip usage bars by used percent. Each step applies from its `from` value up to the next step (thresholds always use percent used, even with showRemaining)."
+          "description": "Colours of the tooltip usage bars by used percent. Each step applies from its `from` value up to the next step; usage below the lowest `from` uses the lowest step's colour. Thresholds always use percent used, even with showRemaining. Invalid entries are ignored; an empty or fully invalid list restores the defaults."
         },
         "codexUsage.statusBarAlignment": {
           "type": "string",
@@ -112,7 +112,7 @@
           "type": "number",
           "default": 60,
           "minimum": 5,
-          "description": "How often to re-read the latest rollout file, in seconds."
+          "description": "How often to refresh usage (query the API or re-read rollout files), in seconds."
         },
         "codexUsage.lookbackDays": {
           "type": "number",
