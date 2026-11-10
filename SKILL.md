@@ -18,8 +18,11 @@ selected via `codexUsage.source`.
 - `src/extension.ts`: activation, polling, command registration, quick-pick UI,
   and source selection (`auto`/`api`/`rollout`) with rollout fallback.
 - `src/statusBar.ts`: single `StatusBarItem`, tooltip rendering, native usage and
-  metadata item builders, compact/full text, source labeling, and left/right
-  alignment (recreates the item since alignment is fixed at creation).
+  metadata item builders, compact/full text, source labeling, left/right
+  alignment (recreates the item since alignment is fixed at creation),
+  used/remaining display (`showRemaining`), and tooltip bar colours
+  (`usageColors`; keep its `HEX_COLOR` regex in sync with the `package.json`
+  schema pattern).
 - `src/codexReader.ts`: resolves Codex home, finds recent rollout files, parses
   the latest usable `token_count.rate_limits`.
 - `src/codexAuth.ts`: reads `~/.codex/auth.json` for the OAuth access token and
@@ -37,8 +40,9 @@ selected via `codexUsage.source`.
 - Keep one status bar item. Do not split session and weekly usage back into two
   items unless explicitly requested.
 - Default (non-compact) status text stays:
-  `$(pulse) Codex <session percent> · <session reset> | Week <weekly percent> · <weekly reset>`.
-  When `codexUsage.compactStatusBar` is on, show only `$(pulse) <highest percent>`.
+  `$(codex-logo) Codex <window percent> · <window reset> | ...` (one segment per
+  reported window). When `codexUsage.compactStatusBar` is on, show only
+  `$(codex-logo) <highest percent>`.
 - Hover should stay lightweight and native: show only session and weekly usage
   bars plus reset dates, then a `More information` command link.
 - Click should use native VS Code UI such as `showQuickPick`, not a webview,

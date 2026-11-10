@@ -8,7 +8,8 @@
   The status bar background and the Show Usage quick-pick icons keep the
   fixed 75% / 90% thresholds.
 - Document `codexUsage.showRemaining` and `codexUsage.usageColors` in the
-  README settings table.
+  README settings table, and note that compressed `.jsonl.zst` rollouts are
+  read.
 
 ## 0.2.4
 

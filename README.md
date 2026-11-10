@@ -60,6 +60,9 @@ Codex CLI writes JSONL rollout files to:
 ~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl
 ```
 
+Codex compresses older rollouts in place to `rollout-*.jsonl.zst`; these are
+read too when the VS Code runtime supports zstd.
+
 The extension scans recent rollouts and uses the latest `token_count` event
 with rate-limit data. Windows are labeled by their reported duration rather
 than by their `primary` or `secondary` slot. Both `resets_at` and the legacy
