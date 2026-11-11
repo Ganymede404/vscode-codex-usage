@@ -56,7 +56,10 @@ $(pulse) Codex 12% · 4h59m | Week 22% · 4d 2h
 ```
 
 Color: default until `used_percent >= 75` (warning), `>= 90` (error)
-via `backgroundColor`, using the highest visible limit.
+via `backgroundColor`, using the highest visible limit. These status bar
+thresholds are fixed; the tooltip usage bar colours and their thresholds are
+configurable via `codexUsage.usageColors` (default blue / yellow at 75 /
+red at 90).
 
 Tooltip: current-session and weekly text bars plus localized reset dates.
 Extra metadata stays behind a **More information** link.
@@ -74,6 +77,12 @@ lengths without opening a webview.
 
 ## Settings (`contributes.configuration`)
 
+- `codexUsage.source` (`auto` | `api` | `rollout`, default `auto`).
+- `codexUsage.compactStatusBar` (boolean, default `false`).
+- `codexUsage.showRemaining` (boolean, default `false`) — show "% left".
+- `codexUsage.usageColors` (array of `{ from, color }`, default blue /
+  yellow at 75 / red at 90) — tooltip bar colours by used percent.
+- `codexUsage.statusBarAlignment` (`left` | `right`, default `left`).
 - `codexUsage.codexHome` (string, default `""` → resolves to `~/.codex`).
 - `codexUsage.refreshIntervalSeconds` (number, default `60`).
 - `codexUsage.lookbackDays` (number, default `7`).

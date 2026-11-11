@@ -12,6 +12,8 @@ live Codex usage endpoint using the credential you are already logged in with.
 - **Compact or full footer:** show a minimal percent chip or the full
   per-window breakdown.
 - Provides usage bars and exact reset times on hover or click.
+- Optionally shows remaining usage ("% left") instead of usage consumed, and
+  lets you customize the usage bar colours and their thresholds.
 - Adapts to the windows reported by your plan, including 5-hour, daily,
   weekly, and monthly limits.
 - Displays plan, credits, and spend-control information when available.
@@ -58,6 +60,9 @@ Codex CLI writes JSONL rollout files to:
 ~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl
 ```
 
+Codex compresses older rollouts in place to `rollout-*.jsonl.zst`; these are
+read too when the VS Code runtime supports zstd.
+
 The extension scans recent rollouts and uses the latest `token_count` event
 with rate-limit data. Windows are labeled by their reported duration rather
 than by their `primary` or `secondary` slot. Both `resets_at` and the legacy
@@ -82,10 +87,59 @@ notes why in the tooltip.
 | --- | --- | --- |
 | `codexUsage.source` | `auto` | Data source: `auto`, `api` (online), or `rollout` (offline). |
 | `codexUsage.compactStatusBar` | `false` | Show a compact percent chip instead of the full breakdown. |
+| `codexUsage.showRemaining` | `false` | Show remaining usage ("% left", counting down from 100%) instead of used usage, like the Codex CLI. |
+| `codexUsage.usageColors` | blue / yellow ≥ 75% / red ≥ 90% | Tooltip usage bar colours by used percent. See [Usage bar colours](#usage-bar-colours). |
+| `codexUsage.statusBarBackground` | `thresholds`, then `usage` on first launch | How the status bar item is highlighted. See [Status bar highlight](#status-bar-highlight). |
 | `codexUsage.statusBarAlignment` | `left` | Which side of the status bar the usage item appears on (`left` or `right`). |
 | `codexUsage.codexHome` | `~/.codex` | Codex home directory. |
 | `codexUsage.refreshIntervalSeconds` | `60` | How often to refresh usage, in seconds. |
 | `codexUsage.lookbackDays` | `7` | Number of days to scan for rollout files. |
+
+### Usage bar colours
+
+`codexUsage.usageColors` is a list of `{ "from", "color" }` steps. Each step's
+colour applies from its `from` value (percent **used**, 0–100) up to the next
+step; usage below the lowest `from` uses the lowest step's colour. Thresholds
+always use percent used, even when `codexUsage.showRemaining` is on. Colours
+must be hex values (`#rgb`, `#rgba`, `#rrggbb` or `#rrggbbaa`). Invalid entries
+are ignored, and an empty or fully invalid list restores the defaults:
+
+```json
+"codexUsage.usageColors": [
+  { "from": 0, "color": "#0078d4" },
+  { "from": 75, "color": "#cca700" },
+  { "from": 90, "color": "#f14c4c", "showStatusBarColor": 1 }
+]
+```
+
+`showStatusBarColor` is optional. Set it to `true` or `1` on a step to
+highlight the status bar item with that colour, and only while that step is
+the active one (`codexUsage.statusBarBackground` must be `usage`). Leave it
+off and the bar in the tooltip still uses the colour, but the status bar item
+does not. The icons in **Codex Usage: Show Usage** keep the fixed 75%
+(warning) and 90% (error) thresholds.
+
+### Status bar highlight
+
+`codexUsage.statusBarBackground` controls the status bar item itself:
+
+- `none` — no highlight.
+- `thresholds` — the theme warning background from 75% used and the error
+  background from 90% used. This ignores `usageColors` and is the previous
+  behaviour. It is also the schema default.
+- `usage` — highlight the whole status bar item (icon and text) with the
+  active `usageColors` colour, but only when that step sets
+  `showStatusBarColor` to `true` or `1`. Other steps leave the item
+  uncoloured.
+
+VS Code only allows the theme warning and error colours as a real status bar
+background, so `usage` colours the entire item instead of filling it with an
+arbitrary hex.
+
+The schema default is `thresholds`. The first time you launch the extension
+after this setting ships, it is set to `usage` (the last option) if you have
+not chosen a value. That happens once; later updates do not change it, and
+resetting the setting returns to `thresholds`.
 
 ## Commands
 
@@ -114,5 +168,5 @@ Press `F5` in VS Code to launch an Extension Development Host.
 
 - Codex `exec` mode may emit `rate_limits: null`. These events are skipped;
   usage remains unavailable until Codex writes a populated event.
-- Usage reflects the latest local rollout snapshot and cannot update more
-  frequently than Codex writes that data.
+- In rollout (offline) mode, usage reflects the latest local rollout snapshot
+  and cannot update more frequently than Codex writes that data.

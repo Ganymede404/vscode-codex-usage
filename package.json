@@ -2,7 +2,7 @@
   "name": "vscode-codex-usage",
   "displayName": "Codex Usage",
   "description": "Show Codex CLI usage in the VS Code status bar.",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "publisher": "ganymede404",
   "icon": "images/icon.png",
   "galleryBanner": {
@@ -76,6 +76,41 @@
           "default": false,
           "description": "Show remaining usage (\"% left\", counting down from 100%) instead of used usage, like the Codex CLI."
         },
+        "codexUsage.usageColors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": { "type": "number", "minimum": 0, "maximum": 100, "description": "Used percent at which this colour starts." },
+              "color": { "type": "string", "pattern": "^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$", "patternErrorMessage": "Use a hex colour: #rgb, #rgba, #rrggbb or #rrggbbaa.", "description": "Hex colour, e.g. #4caf50." },
+              "showStatusBarColor": {
+                "anyOf": [
+                  { "type": "boolean" },
+                  { "type": "integer", "enum": [0, 1] }
+                ],
+                "description": "Optional. true or 1 highlights the status bar item with this colour while this step is active and codexUsage.statusBarBackground is \"usage\". Omit it, or set false or 0, to leave the status bar uncoloured for this step."
+              }
+            },
+            "required": ["from", "color"]
+          },
+          "default": [
+            { "from": 0, "color": "#0078d4" },
+            { "from": 75, "color": "#cca700" },
+            { "from": 90, "color": "#f14c4c" }
+          ],
+          "description": "Colours of the tooltip usage bars by used percent. Each step applies from its `from` value up to the next step; usage below the lowest `from` uses the lowest step's colour. Optional `showStatusBarColor` (true or 1) highlights the status bar item with that step's colour only while the step is active. Thresholds always use percent used, even with showRemaining. Invalid entries are ignored; an empty or fully invalid list restores the defaults."
+        },
+        "codexUsage.statusBarBackground": {
+          "type": "string",
+          "enum": ["none", "thresholds", "usage"],
+          "enumDescriptions": [
+            "Do not highlight the status bar item.",
+            "Use the theme warning background from 75% used and the error background from 90% used. Ignores usageColors.",
+            "Highlight the whole status bar item with the active usageColors colour, but only when that step sets showStatusBarColor to true or 1."
+          ],
+          "default": "thresholds",
+          "markdownDescription": "How the status bar item is highlighted. VS Code only allows the theme warning and error colours as a real status bar background, so `usage` colours the entire item (icon and text) with the active `usageColors` colour — and only when that step sets `showStatusBarColor` to true or 1. The default in the schema stays `thresholds` (the previous behaviour). The first time this setting ships, the extension sets it to `usage` if you have not chosen a value; later updates do not change it."
+        },
         "codexUsage.statusBarAlignment": {
           "type": "string",
           "enum": ["left", "right"],
@@ -95,7 +130,7 @@
           "type": "number",
           "default": 60,
           "minimum": 5,
-          "description": "How often to re-read the latest rollout file, in seconds."
+          "description": "How often to refresh usage (query the API or re-read rollout files), in seconds."
         },
         "codexUsage.lookbackDays": {
           "type": "number",

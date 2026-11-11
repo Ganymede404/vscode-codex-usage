@@ -103,6 +103,7 @@ export class StatusBar {
     if (!snapshot) {
       this.item.text = compact ? "$(codex-logo) —" : "$(codex-logo) Codex —";
       this.item.tooltip = "No Codex usage data. Start a Codex session or run 'codex login'.";
+      this.item.color = undefined;
       this.item.backgroundColor = undefined;
       this.item.show();
       return;
@@ -119,13 +120,12 @@ export class StatusBar {
     }
     this.item.tooltip = renderUsageTooltip(snapshot, windows, options.note);
 
-    const highestPercent = windows.reduce((max, w) => Math.max(max, w.window.used_percent ?? 0), 0);
-    if (highestPercent >= 90) {
-      this.item.backgroundColor = new vscode.ThemeColor("statusBarItem.errorBackground");
-    } else if (highestPercent >= 75) {
-      this.item.backgroundColor = new vscode.ThemeColor("statusBarItem.warningBackground");
-    } else {
+    if (windows.length === 0) {
+      this.item.color = undefined;
       this.item.backgroundColor = undefined;
+    } else {
+      const highestPercent = windows.reduce((max, w) => Math.max(max, w.window.used_percent ?? 0), 0);
+      applyStatusBarHighlight(this.item, highestPercent);
     }
 
     this.item.show();
@@ -398,10 +398,96 @@ function escapeMarkdownAltText(text: string): string {
   return text.replace(/[[\]\\]/g, "\\$&");
 }
 
+export interface UsageColorStep {
+  from: number;
+  color: string;
+  // Optional. true or 1 highlights the status bar item with this colour
+  // while this step is the active one.
+  showStatusBarColor?: boolean | number;
+}
+
+const DEFAULT_USAGE_COLORS: UsageColorStep[] = [
+  { from: 0, color: USAGE_COLOR_DEFAULT },
+  { from: 75, color: USAGE_COLOR_WARNING },
+  { from: 90, color: USAGE_COLOR_ERROR },
+];
+
+// #rgb, #rgba, #rrggbb or #rrggbbaa. Keep in sync with the package.json schema.
+// Also guards the value interpolated into the tooltip SVG's fill attribute.
+const HEX_COLOR = /^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+
+let usageColors = DEFAULT_USAGE_COLORS;
+
+export type StatusBarBackgroundMode = "none" | "thresholds" | "usage";
+
+// Schema default. The first launch after this setting ships opts unset
+// installs into "usage" once; see ensureStatusBarBackgroundDefault.
+let statusBarBackgroundMode: StatusBarBackgroundMode = "thresholds";
+
+export function setStatusBarBackground(value: unknown) {
+  statusBarBackgroundMode =
+    value === "none" || value === "thresholds" || value === "usage" ? value : "thresholds";
+}
+
+// `usage` paints the whole item (icon and text) with the active usage colour.
+// VS Code only accepts the theme warning and error colours as a real
+// background, so a custom hex cannot fill the status bar item itself.
+function applyStatusBarHighlight(item: vscode.StatusBarItem, percent: number) {
+  if (statusBarBackgroundMode === "none") {
+    item.color = undefined;
+    item.backgroundColor = undefined;
+    return;
+  }
+  if (statusBarBackgroundMode === "usage") {
+    const step = getActiveUsageStep(percent);
+    item.color = stepShowsStatusBar(step) ? step.color : undefined;
+    item.backgroundColor = undefined;
+    return;
+  }
+  item.color = undefined;
+  if (percent >= 90) {
+    item.backgroundColor = new vscode.ThemeColor("statusBarItem.errorBackground");
+  } else if (percent >= 75) {
+    item.backgroundColor = new vscode.ThemeColor("statusBarItem.warningBackground");
+  } else {
+    item.backgroundColor = undefined;
+  }
+}
+
+// Colours for the tooltip bars, keyed on the used percent. Invalid entries are
+// dropped; an empty/invalid list restores the defaults.
+export function setUsageColors(steps: unknown) {
+  const valid = Array.isArray(steps)
+    ? steps
+        .filter(
+          (s): s is UsageColorStep =>
+            !!s &&
+            typeof s.from === "number" &&
+            Number.isFinite(s.from) &&
+            typeof s.color === "string" &&
+            HEX_COLOR.test(s.color),
+        )
+        .sort((a, b) => a.from - b.from)
+    : [];
+  usageColors = valid.length > 0 ? valid : DEFAULT_USAGE_COLORS;
+}
+
+function getActiveUsageStep(percent: number): UsageColorStep {
+  let step = usageColors[0];
+  for (const candidate of usageColors) {
+    if (percent >= candidate.from) step = candidate;
+  }
+  return step;
+}
+
 function getUsageColor(percent: number): string {
-  if (percent >= 90) return USAGE_COLOR_ERROR;
-  if (percent >= 75) return USAGE_COLOR_WARNING;
-  return USAGE_COLOR_DEFAULT;
+  return getActiveUsageStep(percent).color;
+}
+
+// Only an explicit true or 1 opts that step into the status bar highlight.
+// Omitted, false, and 0 leave the item uncoloured while that step is active.
+function stepShowsStatusBar(step: UsageColorStep): boolean {
+  return step.showStatusBarColor === true || step.showStatusBarColor === 1;
 }
 
 function getUsageIcon(percent: number): string {
