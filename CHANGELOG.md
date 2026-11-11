@@ -5,8 +5,14 @@
 - Add `codexUsage.usageColors` setting to customize the tooltip usage bar
   colours and the used-percent thresholds at which they change (#16). The
   defaults match the previous behaviour (blue, yellow from 75%, red from 90%).
-  The status bar background and the Show Usage quick-pick icons keep the
-  fixed 75% / 90% thresholds.
+  The Show Usage quick-pick icons keep the fixed 75% / 90% thresholds.
+- Add `codexUsage.statusBarBackground` (`none`, `thresholds`, `usage`) to
+  highlight the whole status bar item. `usage` colours the icon and text with
+  the active `usageColors` colour. VS Code cannot fill a status bar item with
+  an arbitrary background, so that is the supported highlight. The schema
+  default stays `thresholds` (warning at 75%, error at 90%). The first launch
+  after this ships sets the value to `usage` when it has not been chosen;
+  later updates do not change it.
 - Document `codexUsage.showRemaining` and `codexUsage.usageColors` in the
   README settings table, and note that compressed `.jsonl.zst` rollouts are
   read.

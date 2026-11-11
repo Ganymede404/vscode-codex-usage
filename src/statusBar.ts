@@ -103,6 +103,7 @@ export class StatusBar {
     if (!snapshot) {
       this.item.text = compact ? "$(codex-logo) —" : "$(codex-logo) Codex —";
       this.item.tooltip = "No Codex usage data. Start a Codex session or run 'codex login'.";
+      this.item.color = undefined;
       this.item.backgroundColor = undefined;
       this.item.show();
       return;
@@ -119,13 +120,12 @@ export class StatusBar {
     }
     this.item.tooltip = renderUsageTooltip(snapshot, windows, options.note);
 
-    const highestPercent = windows.reduce((max, w) => Math.max(max, w.window.used_percent ?? 0), 0);
-    if (highestPercent >= 90) {
-      this.item.backgroundColor = new vscode.ThemeColor("statusBarItem.errorBackground");
-    } else if (highestPercent >= 75) {
-      this.item.backgroundColor = new vscode.ThemeColor("statusBarItem.warningBackground");
-    } else {
+    if (windows.length === 0) {
+      this.item.color = undefined;
       this.item.backgroundColor = undefined;
+    } else {
+      const highestPercent = windows.reduce((max, w) => Math.max(max, w.window.used_percent ?? 0), 0);
+      applyStatusBarHighlight(this.item, highestPercent);
     }
 
     this.item.show();
@@ -414,6 +414,41 @@ const DEFAULT_USAGE_COLORS: UsageColorStep[] = [
 const HEX_COLOR = /^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 
 let usageColors = DEFAULT_USAGE_COLORS;
+
+export type StatusBarBackgroundMode = "none" | "thresholds" | "usage";
+
+// Schema default. The first launch after this setting ships opts unset
+// installs into "usage" once; see ensureStatusBarBackgroundDefault.
+let statusBarBackgroundMode: StatusBarBackgroundMode = "thresholds";
+
+export function setStatusBarBackground(value: unknown) {
+  statusBarBackgroundMode =
+    value === "none" || value === "thresholds" || value === "usage" ? value : "thresholds";
+}
+
+// `usage` paints the whole item (icon and text) with the active usage colour.
+// VS Code only accepts the theme warning and error colours as a real
+// background, so a custom hex cannot fill the status bar item itself.
+function applyStatusBarHighlight(item: vscode.StatusBarItem, percent: number) {
+  if (statusBarBackgroundMode === "none") {
+    item.color = undefined;
+    item.backgroundColor = undefined;
+    return;
+  }
+  if (statusBarBackgroundMode === "usage") {
+    item.color = getUsageColor(percent);
+    item.backgroundColor = undefined;
+    return;
+  }
+  item.color = undefined;
+  if (percent >= 90) {
+    item.backgroundColor = new vscode.ThemeColor("statusBarItem.errorBackground");
+  } else if (percent >= 75) {
+    item.backgroundColor = new vscode.ThemeColor("statusBarItem.warningBackground");
+  } else {
+    item.backgroundColor = undefined;
+  }
+}
 
 // Colours for the tooltip bars, keyed on the used percent. Invalid entries are
 // dropped; an empty/invalid list restores the defaults.

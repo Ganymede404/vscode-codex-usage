@@ -93,6 +93,17 @@
           ],
           "description": "Colours of the tooltip usage bars by used percent. Each step applies from its `from` value up to the next step; usage below the lowest `from` uses the lowest step's colour. Thresholds always use percent used, even with showRemaining. Invalid entries are ignored; an empty or fully invalid list restores the defaults."
         },
+        "codexUsage.statusBarBackground": {
+          "type": "string",
+          "enum": ["none", "thresholds", "usage"],
+          "enumDescriptions": [
+            "Do not highlight the status bar item.",
+            "Use the theme warning background from 75% used and the error background from 90% used. Ignores usageColors.",
+            "Highlight the whole status bar item with the usageColors colour for the current used percent."
+          ],
+          "default": "thresholds",
+          "markdownDescription": "How the status bar item is highlighted. VS Code only allows the theme warning and error colours as a real status bar background, so `usage` colours the entire item (icon and text) with the active `usageColors` colour — that is the supported way to highlight the whole item in a custom colour. The default in the schema stays `thresholds` (the previous behaviour). The first time this setting ships, the extension sets it to `usage` if you have not chosen a value; later updates do not change it."
+        },
         "codexUsage.statusBarAlignment": {
           "type": "string",
           "enum": ["left", "right"],

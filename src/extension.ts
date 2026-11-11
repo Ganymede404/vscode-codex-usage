@@ -6,8 +6,10 @@ import {
   createMoreInformationItems,
   createUsageSummaryItems,
   isMoreInformationItem,
+  setStatusBarBackground,
   setUsageColors,
   StatusBar,
+  StatusBarBackgroundMode,
   StatusBarSide,
 } from "./statusBar";
 import { setShowRemaining } from "./format";
@@ -19,6 +21,40 @@ let timer: NodeJS.Timeout | undefined;
 let statusBar: StatusBar | undefined;
 let lastSnapshot: Snapshot | null = null;
 let lastNote: string | undefined;
+
+// Set once, the first time this setting ships. Later releases must not
+// overwrite a value the user has since changed, or re-apply the default.
+const STATUS_BAR_BACKGROUND_SHIPPED = "codexUsage.statusBarBackground.shipped";
+
+function normalizeStatusBarBackground(value: unknown): StatusBarBackgroundMode {
+  return value === "none" || value === "thresholds" || value === "usage" ? value : "thresholds";
+}
+
+// Schema default stays `thresholds` (previous behaviour). On the first launch
+// after the setting ships, unset installs are pinned to `usage` — the last
+// option — and that write is not repeated.
+async function ensureStatusBarBackgroundDefault(
+  context: vscode.ExtensionContext,
+): Promise<StatusBarBackgroundMode> {
+  const config = vscode.workspace.getConfiguration("codexUsage");
+  const inspected = config.inspect<string>("statusBarBackground");
+  const explicit =
+    inspected?.workspaceFolderValue ?? inspected?.workspaceValue ?? inspected?.globalValue;
+  const shipped = context.globalState.get<boolean>(STATUS_BAR_BACKGROUND_SHIPPED) === true;
+  if (!shipped && explicit === undefined) {
+    try {
+      await config.update("statusBarBackground", "usage", vscode.ConfigurationTarget.Global);
+      await context.globalState.update(STATUS_BAR_BACKGROUND_SHIPPED, true);
+    } catch (err) {
+      console.warn("[codex-usage] could not store the initial status bar background setting:", err);
+    }
+    return "usage";
+  }
+  if (!shipped) {
+    await context.globalState.update(STATUS_BAR_BACKGROUND_SHIPPED, true);
+  }
+  return normalizeStatusBarBackground(explicit ?? config.get<string>("statusBarBackground", "thresholds"));
+}
 
 function getConfig() {
   const c = vscode.workspace.getConfiguration("codexUsage");
@@ -32,6 +68,7 @@ function getConfig() {
     compact: c.get<boolean>("compactStatusBar", false),
     showRemaining: c.get<boolean>("showRemaining", false),
     usageColors: c.get<unknown>("usageColors"),
+    statusBarBackground: normalizeStatusBarBackground(c.get<string>("statusBarBackground", "thresholds")),
     statusBarAlignment: (side === "right" ? "right" : "left") as StatusBarSide,
   };
 }
@@ -72,6 +109,7 @@ async function refresh() {
   const cfg = getConfig();
   setShowRemaining(cfg.showRemaining);
   setUsageColors(cfg.usageColors);
+  setStatusBarBackground(cfg.statusBarBackground);
   statusBar.ensureAlignment(cfg.statusBarAlignment);
   try {
     const result = await resolveSnapshot(cfg);
@@ -123,7 +161,9 @@ async function showMoreInformation() {
   });
 }
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
+  const initialBackground = await ensureStatusBarBackgroundDefault(context);
+  setStatusBarBackground(initialBackground);
   statusBar = new StatusBar(getConfig().statusBarAlignment);
   context.subscriptions.push(statusBar);
 

@@ -89,6 +89,7 @@ notes why in the tooltip.
 | `codexUsage.compactStatusBar` | `false` | Show a compact percent chip instead of the full breakdown. |
 | `codexUsage.showRemaining` | `false` | Show remaining usage ("% left", counting down from 100%) instead of used usage, like the Codex CLI. |
 | `codexUsage.usageColors` | blue / yellow ≥ 75% / red ≥ 90% | Tooltip usage bar colours by used percent. See [Usage bar colours](#usage-bar-colours). |
+| `codexUsage.statusBarBackground` | `thresholds`, then `usage` on first launch | How the status bar item is highlighted. See [Status bar highlight](#status-bar-highlight). |
 | `codexUsage.statusBarAlignment` | `left` | Which side of the status bar the usage item appears on (`left` or `right`). |
 | `codexUsage.codexHome` | `~/.codex` | Codex home directory. |
 | `codexUsage.refreshIntervalSeconds` | `60` | How often to refresh usage, in seconds. |
@@ -111,9 +112,29 @@ are ignored, and an empty or fully invalid list restores the defaults:
 ]
 ```
 
-This setting colours the bars in the hover tooltip. The status bar background
-and the icons in **Codex Usage: Show Usage** keep the fixed 75% (warning) and
-90% (error) thresholds.
+This setting colours the bars in the hover tooltip. The icons in
+**Codex Usage: Show Usage** keep the fixed 75% (warning) and 90% (error)
+thresholds.
+
+### Status bar highlight
+
+`codexUsage.statusBarBackground` controls the status bar item itself:
+
+- `none` — no highlight.
+- `thresholds` — the theme warning background from 75% used and the error
+  background from 90% used. This ignores `usageColors` and is the previous
+  behaviour. It is also the schema default.
+- `usage` — highlight the whole status bar item (icon and text) with the
+  `usageColors` colour for the highest used percent.
+
+VS Code only allows the theme warning and error colours as a real status bar
+background, so `usage` colours the entire item instead of filling it with an
+arbitrary hex.
+
+The schema default is `thresholds`. The first time you launch the extension
+after this setting ships, it is set to `usage` (the last option) if you have
+not chosen a value. That happens once; later updates do not change it, and
+resetting the setting returns to `thresholds`.
 
 ## Commands
 
