@@ -401,6 +401,9 @@ function escapeMarkdownAltText(text: string): string {
 export interface UsageColorStep {
   from: number;
   color: string;
+  // Optional. true or 1 highlights the status bar item with this colour
+  // while this step is the active one.
+  showStatusBarColor?: boolean | number;
 }
 
 const DEFAULT_USAGE_COLORS: UsageColorStep[] = [
@@ -436,7 +439,8 @@ function applyStatusBarHighlight(item: vscode.StatusBarItem, percent: number) {
     return;
   }
   if (statusBarBackgroundMode === "usage") {
-    item.color = getUsageColor(percent);
+    const step = getActiveUsageStep(percent);
+    item.color = stepShowsStatusBar(step) ? step.color : undefined;
     item.backgroundColor = undefined;
     return;
   }
@@ -468,12 +472,22 @@ export function setUsageColors(steps: unknown) {
   usageColors = valid.length > 0 ? valid : DEFAULT_USAGE_COLORS;
 }
 
-function getUsageColor(percent: number): string {
-  let color = usageColors[0].color;
-  for (const step of usageColors) {
-    if (percent >= step.from) color = step.color;
+function getActiveUsageStep(percent: number): UsageColorStep {
+  let step = usageColors[0];
+  for (const candidate of usageColors) {
+    if (percent >= candidate.from) step = candidate;
   }
-  return color;
+  return step;
+}
+
+function getUsageColor(percent: number): string {
+  return getActiveUsageStep(percent).color;
+}
+
+// Only an explicit true or 1 opts that step into the status bar highlight.
+// Omitted, false, and 0 leave the item uncoloured while that step is active.
+function stepShowsStatusBar(step: UsageColorStep): boolean {
+  return step.showStatusBarColor === true || step.showStatusBarColor === 1;
 }
 
 function getUsageIcon(percent: number): string {

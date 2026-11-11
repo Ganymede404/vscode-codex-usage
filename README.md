@@ -108,13 +108,16 @@ are ignored, and an empty or fully invalid list restores the defaults:
 "codexUsage.usageColors": [
   { "from": 0, "color": "#0078d4" },
   { "from": 75, "color": "#cca700" },
-  { "from": 90, "color": "#f14c4c" }
+  { "from": 90, "color": "#f14c4c", "showStatusBarColor": 1 }
 ]
 ```
 
-This setting colours the bars in the hover tooltip. The icons in
-**Codex Usage: Show Usage** keep the fixed 75% (warning) and 90% (error)
-thresholds.
+`showStatusBarColor` is optional. Set it to `true` or `1` on a step to
+highlight the status bar item with that colour, and only while that step is
+the active one (`codexUsage.statusBarBackground` must be `usage`). Leave it
+off and the bar in the tooltip still uses the colour, but the status bar item
+does not. The icons in **Codex Usage: Show Usage** keep the fixed 75%
+(warning) and 90% (error) thresholds.
 
 ### Status bar highlight
 
@@ -125,7 +128,9 @@ thresholds.
   background from 90% used. This ignores `usageColors` and is the previous
   behaviour. It is also the schema default.
 - `usage` — highlight the whole status bar item (icon and text) with the
-  `usageColors` colour for the highest used percent.
+  active `usageColors` colour, but only when that step sets
+  `showStatusBarColor` to `true` or `1`. Other steps leave the item
+  uncoloured.
 
 VS Code only allows the theme warning and error colours as a real status bar
 background, so `usage` colours the entire item instead of filling it with an
